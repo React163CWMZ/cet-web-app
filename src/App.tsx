@@ -4,27 +4,35 @@ const App: React.FC = () => {
   const nextOne = () => {
     console.log("cliked");
   };
-  return (
-    <Space vertical size={16}>
-      <Card
-        style={{
-          width: 300,
-          borderColor: "#4096FF",
-          backgroundColor: "#E6F4FF",
-        }}
-      >
-        <p>Card content</p>
-        <p>Card content</p>
-        <p>Card content</p>
-      </Card>
 
-      <Flex gap="small" wrap>
-        <Button type="primary">显示意思</Button>
-        <Button onClick={nextOne} type="primary">
-          下一个
-        </Button>
-      </Flex>
-    </Space>
+  const importData = () => {
+    console.log("import data");
+  };
+  return (
+    <>
+      <Space vertical size={16}>
+        <Card
+          style={{
+            width: 300,
+            borderColor: "#4096FF",
+            backgroundColor: "#E6F4FF",
+          }}
+        >
+          <p>Card content</p>
+          <p>Card content</p>
+          <p>Card content</p>
+        </Card>
+
+        <Flex gap="small" wrap>
+          <Button type="primary">显示意思</Button>
+          <Button onClick={nextOne} type="primary">
+            下一个
+          </Button>
+        </Flex>
+      </Space>
+      fidf
+      <Button onClick={importData}>导入数据</Button>
+    </>
   );
 };
 
