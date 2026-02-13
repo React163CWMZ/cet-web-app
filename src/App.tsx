@@ -1,4 +1,5 @@
 import { Card, Space, Button, Flex } from "antd"; // 1. 导入 Card 组件
+import { useState, useEffect } from "react";
 import localforage from "localforage";
 import juniorList from "./assets/junior_data.ts";
 import seniorList from "./assets/senior_data.ts";
@@ -12,8 +13,34 @@ const App: React.FC = () => {
     translation: string; // 对应 "能力，能耐；才能"
     type: string; // 对应 "n" (词性)
   }
-  const nextOne = () => {
+
+  interface storedWord {
+    word: string;
+    translations: string;
+  }
+  const [wordIndex, setWordIndex] = useState<number>(0); // 定义状态
+  const [word, setWord] = useState<string>(); // 定义状态，默认值可以是空数组或 null
+  const nextOne = async () => {
     console.log("cliked");
+    try {
+      // let storedData: storedWord | null = { word: "", translations: "" };
+      const storedData: storedWord | null = await juniorDB.getItem(
+        wordIndex.toString(),
+      );
+
+      // 2. 判断数据是否存在
+      if (storedData) {
+        console.log("X:", storedData["word"]);
+        // 如果存在，更新到 state (localforage 会自动反序列化对象/数组)
+        setWord(storedData["word"]);
+        setWordIndex(wordIndex + 1);
+      } else {
+        // 如果没有数据，可以设置默认值或者保持为空
+        setWord("");
+      }
+    } catch (err) {
+      alert("读取失败：" + err);
+    }
   };
   // 单词数据库：MyDb
   const juniorDB: LocalForage = localforage.createInstance({
@@ -73,11 +100,17 @@ const App: React.FC = () => {
 
   async function getData() {
     try {
-      const data = await juniorDB.getItem("sweet");
-      if (data) {
-        alert("读取到数据：\n" + JSON.stringify(data, null, 2));
+      const storedData: storedWord | null = await juniorDB.getItem(
+        wordIndex.toString(),
+      );
+
+      // 2. 判断数据是否存在
+      if (storedData) {
+        // 如果存在，更新到 state (localforage 会自动反序列化对象/数组)
+        setWord(storedData["word"]);
       } else {
-        alert("未读取到数据（可能未保存或已删除）");
+        // 如果没有数据，可以设置默认值或者保持为空
+        setWord("");
       }
     } catch (err) {
       alert("读取失败：" + err);
@@ -145,6 +178,36 @@ const App: React.FC = () => {
   const getWord = () => {
     getData();
   };
+  useEffect(() => {
+    // 定义一个异步函数
+    const loadData = async () => {
+      try {
+        // 1. 从 localforage 获取数据
+        // getItem 第一个参数是 key
+        const storedData: storedWord | null = await juniorDB.getItem("0");
+
+        // 2. 判断数据是否存在
+        if (storedData) {
+          // 如果存在，更新到 state (localforage 会自动反序列化对象/数组)
+          setWord(storedData["word"]);
+          setWordIndex(wordIndex + 1);
+        } else {
+          // 如果没有数据，可以设置默认值或者保持为空
+          setWord("");
+        }
+      } catch (err) {
+        // 读取失败（例如浏览器隐私模式）
+        console.error("读取失败:", err);
+        setWord("");
+      } finally {
+        // 结束加载状态
+        //setLoading(false);
+      }
+    };
+
+    // 执行读取
+    loadData();
+  }, []); // 空依赖数组，确保只在组件挂载时执行一次
   return (
     <>
       <Space vertical size={16}>
@@ -155,7 +218,7 @@ const App: React.FC = () => {
             backgroundColor: "#E6F4FF",
           }}
         >
-          <p>Card content</p>
+          <p>{word}</p>
           <p>Card content</p>
           <p>Card content</p>
         </Card>
