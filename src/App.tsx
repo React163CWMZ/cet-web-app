@@ -20,6 +20,7 @@ const App: React.FC = () => {
   }
   const [wordIndex, setWordIndex] = useState<number>(0); // 定义状态
   const [word, setWord] = useState<string>(); // 定义状态，默认值可以是空数组或 null
+  const [translations, setTranslations] = useState<string>();
   const nextOne = async () => {
     console.log("cliked");
     try {
@@ -27,13 +28,19 @@ const App: React.FC = () => {
       const storedData: storedWord | null = await juniorDB.getItem(
         wordIndex.toString(),
       );
-
+      let translations_arr: WordItem[] = [];
       // 2. 判断数据是否存在
       if (storedData) {
-        console.log("X:", storedData["word"]);
+        console.log("X:", typeof storedData["translations"]);
         // 如果存在，更新到 state (localforage 会自动反序列化对象/数组)
         setWord(storedData["word"]);
         setWordIndex(wordIndex + 1);
+        // vs code prompt type error, this is strict ensure type correct
+        if (Array.isArray(storedData["translations"])) {
+          translations_arr = storedData["translations"];
+        }
+
+        setTranslations(connectTranslations(translations_arr));
       } else {
         // 如果没有数据，可以设置默认值或者保持为空
         setWord("");
@@ -179,34 +186,8 @@ const App: React.FC = () => {
     getData();
   };
   useEffect(() => {
-    // 定义一个异步函数
-    const loadData = async () => {
-      try {
-        // 1. 从 localforage 获取数据
-        // getItem 第一个参数是 key
-        const storedData: storedWord | null = await juniorDB.getItem("0");
-
-        // 2. 判断数据是否存在
-        if (storedData) {
-          // 如果存在，更新到 state (localforage 会自动反序列化对象/数组)
-          setWord(storedData["word"]);
-          setWordIndex(wordIndex + 1);
-        } else {
-          // 如果没有数据，可以设置默认值或者保持为空
-          setWord("");
-        }
-      } catch (err) {
-        // 读取失败（例如浏览器隐私模式）
-        console.error("读取失败:", err);
-        setWord("");
-      } finally {
-        // 结束加载状态
-        //setLoading(false);
-      }
-    };
-
     // 执行读取
-    loadData();
+    nextOne();
   }, []); // 空依赖数组，确保只在组件挂载时执行一次
   return (
     <>
@@ -219,7 +200,7 @@ const App: React.FC = () => {
           }}
         >
           <p>{word}</p>
-          <p>Card content</p>
+          <p>{translations}</p>
           <p>Card content</p>
         </Card>
 
