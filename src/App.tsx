@@ -21,10 +21,10 @@ const App: React.FC = () => {
   const [wordIndex, setWordIndex] = useState<number>(0); // 定义状态
   const [word, setWord] = useState<string>(); // 定义状态，默认值可以是空数组或 null
   const [translations, setTranslations] = useState<string>();
+  const [translationsArr, setTranslationsArr] = useState<WordItem[]>();
   const nextOne = async () => {
     console.log("cliked");
     try {
-      // let storedData: storedWord | null = { word: "", translations: "" };
       const storedData: storedWord | null = await juniorDB.getItem(
         wordIndex.toString(),
       );
@@ -39,8 +39,8 @@ const App: React.FC = () => {
         if (Array.isArray(storedData["translations"])) {
           translations_arr = storedData["translations"];
         }
-
-        setTranslations(connectTranslations(translations_arr));
+        setTranslationsArr(translations_arr);
+        // setTranslations(connectTranslations(translations_arr));
       } else {
         // 如果没有数据，可以设置默认值或者保持为空
         setWord("");
@@ -189,10 +189,72 @@ const App: React.FC = () => {
     // 执行读取
     nextOne();
   }, []); // 空依赖数组，确保只在组件挂载时执行一次
+
+  // --- 1. 定义存储函数 ---
+  const saveAudioToDB = async () => {
+    try {
+      let audioBlob: Blob;
+      // 1. 获取音频文件 (假设 1.mp3 在 public 目录下，可通过根路径访问)
+      await fetch("/ability.mp3") // 如果在 src 同级目录或 public 下
+        .then((response) => response.blob())
+        .then((blob) => {
+          console.log(blob instanceof Blob, blob);
+          audioBlob = blob;
+          localforage.setItem("ability_mp3", audioBlob);
+        });
+
+      // console.log(audioBlob);
+      // 3. 存入 LocalForage
+      // 第一个参数是键名（你自己定义），第二个参数是刚才获取的 Blob 数据
+      // await localforage.setItem("a_mp3", audioBlob);
+
+      console.log("🎉 1.mp3 已成功存入数据库");
+    } catch (error) {
+      console.error("💾 存储失败:", error);
+    }
+  };
+
+  // --- 2. 定义读取并播放函数 ---
+  const playAudioFromDB = async () => {
+    try {
+      // 1. 从数据库取出数据
+      const blob: Blob | null = await localforage.getItem("ability_mp3");
+
+      if (!blob) {
+        alert("数据库中没有找到该文件");
+        return;
+      }
+
+      // 2. 创建临时 URL 供 Audio 标签使用
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+
+      // 3. 播放 (注意：浏览器要求播放必须由用户点击触发)
+      audio.play().catch((err) => {
+        console.error("播放被阻止:", err);
+        alert("请先点击页面任意位置，再尝试播放");
+      });
+
+      // 可选：播放结束后释放内存 (这里简化处理，实际可能需要监听 ended 事件)
+      // audio.onended = () => URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("播放失败:", err);
+    }
+  };
+
   return (
     <>
       <Space vertical size={16}>
         <Card
+          actions={[
+            // 通常放按钮或带点击事件的元素
+            <Button type="dashed" key="showTranslations">
+              显示中文
+            </Button>,
+            <Button type="primary" key="next" onClick={nextOne}>
+              下一个
+            </Button>,
+          ]}
           style={{
             width: 300,
             borderColor: "#4096FF",
@@ -200,15 +262,20 @@ const App: React.FC = () => {
           }}
         >
           <p>{word}</p>
-          <p>{translations}</p>
-          <p>Card content</p>
+          {/* 使用可选链 (Optional Chaining) */}
+          {translationsArr?.map((item, index) => (
+            <p>
+              {item.translation} {item.type}
+            </p>
+          ))}
         </Card>
 
         <Flex gap="small" wrap>
-          <Button type="primary">显示意思</Button>
-          <Button onClick={nextOne} type="primary">
-            下一个
-          </Button>
+          {/* 点击按钮存入 MP3 */}
+          <button onClick={saveAudioToDB}>存储 1.mp3 到数据库</button>
+
+          {/* 点击按钮播放 MP3 */}
+          <button onClick={playAudioFromDB}>播放数据库中的 1.mp3</button>
         </Flex>
       </Space>
       <Space vertical size={16}>
