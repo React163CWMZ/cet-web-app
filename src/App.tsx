@@ -298,12 +298,26 @@ const App: React.FC = () => {
             borderColor: "#4096FF",
             backgroundColor: "#E6F4FF",
           }}
-          bodyStyle={{
-            flex: 1,
-            overflowY: "auto",
+          // ✅ 新版 antd 推荐：用 styles 代替 bodyStyle
+          styles={{
+            header: {
+              background: "#1677ff", // 顶部蓝色
+              color: "#fff",
+              fontSize: "16px",
+              fontWeight: 500,
+            },
+            body: {
+              flex: 1,
+              overflowY: "auto", // 内容内部滚动
+              padding: "16px",
+            },
+            actions: {
+              backgroundColor: "#fafafa",
+              borderTop: "1px solid #e8e8e8",
+            },
           }}
         >
-          <p style={{ fontSize: 22 }}>{word}</p>
+          <p style={{ fontSize: 22, fontWeight: 500 }}>{word}</p>
           {/* 使用可选链 (Optional Chaining) */}
           {translationsArr?.map((item, index) => (
             <p key={index}>
