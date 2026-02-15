@@ -22,9 +22,12 @@ const App: React.FC = () => {
   const [word, setWord] = useState<string>(); // 定义状态，默认值可以是空数组或 null
   const [translations, setTranslations] = useState<string>();
   const [translationsArr, setTranslationsArr] = useState<WordItem[]>();
+  const [nextOneDisable, setNextOneDisable] = useState<boolean>(false);
+
   const nextOne = async () => {
     console.log("cliked");
     try {
+      setNextOneDisable(true);
       const storedData: storedWord | null = await juniorDB.getItem(
         wordIndex.toString(),
       );
@@ -40,6 +43,19 @@ const App: React.FC = () => {
           translations_arr = storedData["translations"];
         }
         setTranslationsArr(translations_arr);
+        // let utteranceWord = new SpeechSynthesisUtterance(storedData["word"]),
+        //   utteranceWord.lang = "en-US"
+        //   utteranceWord.volume = 1;
+        setTimeout(() => {
+          //发音
+          speechSynthesis.speak(
+            new SpeechSynthesisUtterance(storedData["word"]),
+          );
+        }, 500);
+
+        setTimeout(() => {
+          setNextOneDisable(false);
+        }, 1000);
         // setTranslations(connectTranslations(translations_arr));
       } else {
         // 如果没有数据，可以设置默认值或者保持为空
@@ -195,12 +211,12 @@ const App: React.FC = () => {
     try {
       let audioBlob: Blob;
       // 1. 获取音频文件 (假设 1.mp3 在 public 目录下，可通过根路径访问)
-      await fetch("/ability.mp3") // 如果在 src 同级目录或 public 下
+      await fetch("/a.mp3") // 如果在 src 同级目录或 public 下
         .then((response) => response.blob())
         .then((blob) => {
           console.log(blob instanceof Blob, blob);
           audioBlob = blob;
-          localforage.setItem("ability_mp3", audioBlob);
+          localforage.setItem("a_mp3", audioBlob);
         });
 
       // console.log(audioBlob);
@@ -218,7 +234,7 @@ const App: React.FC = () => {
   const playAudioFromDB = async () => {
     try {
       // 1. 从数据库取出数据
-      const blob: Blob | null = await localforage.getItem("ability_mp3");
+      const blob: Blob | null = await localforage.getItem("a_mp3");
 
       if (!blob) {
         alert("数据库中没有找到该文件");
@@ -240,36 +256,64 @@ const App: React.FC = () => {
     } catch (err) {
       console.error("播放失败:", err);
     }
+
+    setTimeout(() => {
+      // speechSynthesis.speak(new SpeechSynthesisUtterance("the time is over"));
+    }, 500);
   };
 
   return (
     <>
-      <Space vertical size={16}>
+      <div
+        style={{
+          height: "100vh",
+          padding: 16,
+          overflow: "hidden",
+          boxSizing: "border-box",
+        }}
+      >
         <Card
+          title="初中单词"
           actions={[
             // 通常放按钮或带点击事件的元素
             <Button type="dashed" key="showTranslations">
               显示中文
             </Button>,
-            <Button type="primary" key="next" onClick={nextOne}>
+            <Button
+              type="primary"
+              key="next"
+              disabled={nextOneDisable}
+              onClick={nextOne}
+            >
               下一个
             </Button>,
           ]}
           style={{
             width: 300,
+            height: "80vh",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+
             borderColor: "#4096FF",
             backgroundColor: "#E6F4FF",
           }}
+          bodyStyle={{
+            flex: 1,
+            overflowY: "auto",
+          }}
         >
-          <p>{word}</p>
+          <p style={{ fontSize: 22 }}>{word}</p>
           {/* 使用可选链 (Optional Chaining) */}
           {translationsArr?.map((item, index) => (
-            <p>
+            <p key={index}>
               {item.translation} {item.type}
             </p>
           ))}
         </Card>
+      </div>
 
+      <Space>
         <Flex gap="small" wrap>
           {/* 点击按钮存入 MP3 */}
           <button onClick={saveAudioToDB}>存储 1.mp3 到数据库</button>
