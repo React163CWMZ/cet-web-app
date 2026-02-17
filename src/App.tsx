@@ -276,7 +276,14 @@ const App: React.FC = () => {
           title="初中单词"
           actions={[
             // 通常放按钮或带点击事件的元素
-            <Button type="dashed" key="showTranslations">
+            <Button type="primary" key="unknownWord">
+              加入学习
+            </Button>,
+            <Button
+              type="primary"
+              key="showTranslations"
+              // style={{ backgroundColor: "#ffe8cc" }}
+            >
               显示中文
             </Button>,
             <Button
