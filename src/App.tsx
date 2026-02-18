@@ -1,6 +1,7 @@
 import { Card, Space, Button, Flex } from "antd"; // 1. 导入 Card 组件
 import { useState, useEffect } from "react";
 import localforage from "localforage";
+import tryList from "./assets/try_data.ts";
 import juniorList from "./assets/junior_data.ts";
 import seniorList from "./assets/senior_data.ts";
 import wordList from "./assets/data_json.ts";
@@ -9,7 +10,7 @@ const App: React.FC = () => {
   // 定义一个通用的 JSON 类型
   type JsonObject = Record<string, any>;
   // 1. 定义对象的结构
-  interface WordItem {
+  interface TranslationsItem {
     translation: string; // 对应 "能力，能耐；才能"
     type: string; // 对应 "n" (词性)
   }
@@ -21,7 +22,7 @@ const App: React.FC = () => {
   const [wordIndex, setWordIndex] = useState<number>(0); // 定义状态
   const [word, setWord] = useState<string>(); // 定义状态，默认值可以是空数组或 null
   const [translations, setTranslations] = useState<string>();
-  const [translationsArr, setTranslationsArr] = useState<WordItem[]>();
+  const [translationsArr, setTranslationsArr] = useState<TranslationsItem[]>();
   const [nextOneDisable, setNextOneDisable] = useState<boolean>(false);
 
   const nextOne = async () => {
@@ -31,7 +32,7 @@ const App: React.FC = () => {
       const storedData: storedWord | null = await juniorDB.getItem(
         wordIndex.toString(),
       );
-      let translations_arr: WordItem[] = [];
+      let translations_arr: TranslationsItem[] = [];
       // 2. 判断数据是否存在
       if (storedData) {
         console.log("X:", typeof storedData["translations"]);
@@ -76,7 +77,7 @@ const App: React.FC = () => {
     storeName: "wordStore", // 类似于表名
   });
   // 中文释义
-  function connectTranslations(translations: WordItem[]): string {
+  function connectTranslations(translations: TranslationsItem[]): string {
     let str: string = "";
     for (const value of translations) {
       console.log(value.translation, value.type);
@@ -92,7 +93,7 @@ const App: React.FC = () => {
       const entries = Object.entries(List);
       await Promise.all(
         entries.map(([key, value]) => {
-          return juniorDB.setItem(key, {
+          return juniorDB.setItem((parseInt(key) + 1).toString(), {
             word: value["word"],
             translations: value["translations"],
           });
@@ -193,7 +194,7 @@ const App: React.FC = () => {
   }
 
   const importData = () => {
-    importJsonData(juniorList);
+    importJsonData(tryList);
   };
   const importDataAll = () => {
     importJsonDataAll();
