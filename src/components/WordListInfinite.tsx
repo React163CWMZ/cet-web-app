@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Flex, Card, Spin, Typography, Space } from "antd";
+import { Flex, Card, Spin, Typography, Space, Row, Col, Button } from "antd";
 import useLocalforageDb from "../utils/useLocalforageDb";
 const { Text } = Typography;
+
+import { Checkbox } from "antd";
+import type { CheckboxChangeEvent, CheckboxProps } from "antd";
 
 // 引入内联样式（也可抽离为单独的 CSS 文件）
 const styles = {
@@ -10,33 +13,33 @@ const styles = {
     width: "100%",
     maxHeight: "calc(100vh - 25vh)",
     overflow: "auto",
-    height: "600px",
+    // height: "600px",
 
     padding: "6px 0px 0px 0px",
     border: "1px solid #fafafa",
     borderRadius: 8,
     // 基础样式
-    "&::-webkit-scrollbar": {
+    "&::WebkitScrollbar": {
       width: "6px", // 竖滚动条宽度
       height: "6px", // 横滚动条高度
     },
     // 滚动条轨道
-    "&::-webkit-scrollbar-track": {
+    "&::WebkitScrollbarTrack": {
       background: "#f5f7fa",
       borderRadius: "3px",
     },
     // 滚动条滑块
-    "&::-webkit-scrollbar-thumb": {
+    "&::WebkitScrollbarThumb": {
       background: "#d1d9e6",
       borderRadius: "3px",
       transition: "background 0.2s ease",
     },
 
     // 滑块 hover 状态
-    "&::-webkit-scrollbar-thumb:hover": {
+    "&::WebkitScrollbarThumb:hover": {
       background: "#1677ff", // 呼应表头主色
     },
-    "&::-webkit-scrollbar-thumb:active": {
+    "&::WebkitScrollbarThumb:active": {
       background: "#86bfff",
     },
     // Firefox 兼容
@@ -96,6 +99,22 @@ const WordListInfinite: React.FC<WordListProps> = () => {
   const [data, setData] = useState<WordItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [hasMore, setHasMore] = useState<boolean>(true);
+
+  // select need learn word
+  const [learn, setLearn] = useState<string[]>([]);
+  // add argument word:string
+  type MyCheckboxProps = (e: CheckboxChangeEvent, word: string) => void;
+  const onChange: MyCheckboxProps = (e: CheckboxChangeEvent, word: string) => {
+    if (e.target.checked === true) {
+      setLearn([...learn, word]);
+    } else {
+      setLearn(learn.filter((item) => item !== word));
+    }
+  };
+  // save need learn word to database
+  const saveLearn = () => {
+    console.log(learn);
+  };
 
   // 使用 ref 存储页码，不需要泛型，number 类型即可
   const page = useRef<number>(1);
@@ -167,12 +186,7 @@ const WordListInfinite: React.FC<WordListProps> = () => {
 
   // 初始化加载
   useEffect(() => {
-    // fetchData will be called again, after previous fetchData() completed.
-    // strict mode, fetchData must be called twice .
-    let aa = async () => {
-      await fetchData();
-    };
-    aa();
+    fetchData();
   }, []);
 
   // 5. 为滚动事件添加类型 React.UIEvent<HTMLDivElement>
@@ -180,14 +194,30 @@ const WordListInfinite: React.FC<WordListProps> = () => {
     const { scrollTop, scrollHeight, clientHeight } =
       e.target as HTMLDivElement;
     // console.log(scrollTop, clientHeight, scrollHeight);
-    if (scrollTop + clientHeight >= scrollHeight - 20 && !loading && hasMore) {
+    if (scrollTop + clientHeight >= scrollHeight - 5 && !loading && hasMore) {
       fetchData();
     }
   };
 
   return (
     <Card
-      title="单词列表"
+      title={
+        <>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              width: "100%",
+            }}
+          >
+            <span>单词列表</span>
+            <Button type="dashed" onClick={saveLearn} size="small">
+              操作
+            </Button>
+          </div>
+        </>
+      }
       style={{ width: "100%", marginTop: 16, backgroundColor: "#fff" }}
       styles={{
         header: {
@@ -210,8 +240,10 @@ const WordListInfinite: React.FC<WordListProps> = () => {
             <Card
               key={item.id}
               size="small"
-              style={{ backgroundColor: "#fff", transition: "background 0.2s" }}
-              styles={{}}
+              style={{
+                backgroundColor: "#fff",
+                transition: "background 0.2s",
+              }}
               // hover 样式
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "#e8f3ff"; // hover 背景色
@@ -220,15 +252,35 @@ const WordListInfinite: React.FC<WordListProps> = () => {
                 e.currentTarget.style.background = "#ffffff"; // 恢复默认背景
               }}
             >
-              <Text strong style={{ color: "#1d2129" }}>
-                {item.word}
-              </Text>
-              <Text
-                type="secondary"
-                style={{ marginLeft: 8, color: "#4e5969" }}
+              <Row
+                justify="space-between"
+                align="middle"
+                style={{ width: "100%" }}
               >
-                {item.meaning}
-              </Text>
+                <Col>
+                  <Text strong style={{ color: "#1d2129" }}>
+                    {item.word}
+                  </Text>
+                </Col>
+                <Col>
+                  <Text
+                    type="secondary"
+                    style={{
+                      marginLeft: 8,
+                      color: "#4e5969",
+                    }}
+                  >
+                    {item.meaning}
+                  </Text>
+                </Col>
+                <Col>
+                  <Space align="end">
+                    <Checkbox
+                      onChange={(e) => onChange(e, item.word)}
+                    ></Checkbox>
+                  </Space>
+                </Col>
+              </Row>
             </Card>
           ))}
         </Flex>
@@ -238,7 +290,7 @@ const WordListInfinite: React.FC<WordListProps> = () => {
               <Space />
             ) : !hasMore ? (
               <Text type="secondary" style={{ fontSize: 12 }}>
-                —— 已经到底啦 ——
+                —— 无单词或已经到底啦 ——
               </Text>
             ) : (
               <Text type="secondary" style={{ fontSize: 12 }}>
