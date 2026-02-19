@@ -27,8 +27,11 @@ interface WordListProps {
 // 中文释义
 function connectTranslations(translations: TranslationsItem[]): string {
   let str: string = "";
-  for (const value of translations) {
-    str += value.translation + " " + value.type + " | ";
+  for (const [index, value] of translations.entries()) {
+    str += value.translation + " " + value.type;
+    if (index !== translations.length - 1) {
+      str += " | ";
+    }
   }
   return str;
 }
@@ -145,17 +148,24 @@ const WordListInfinite: React.FC<WordListProps> = () => {
         style={{
           height: "600px",
           overflowY: "auto",
-          padding: "0 4px",
+          padding: "6px 0px 0px 0px",
           border: "1px solid #f0f0f0",
           borderRadius: 8,
         }}
       >
-        <Flex vertical gap="small">
+        <Flex
+          vertical
+          gap="small"
+          style={{
+            padding: "0 6px",
+          }}
+        >
           {data.map((item, index) => (
             <Card
               key={item.id}
               size="small"
               style={{ backgroundColor: "#fafafa" }}
+              styles={{}}
             >
               <Text strong>{item.word}</Text>
               <Text type="secondary" style={{ marginLeft: 8 }}>
