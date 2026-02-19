@@ -4,12 +4,15 @@ import App from "./App";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
+import EbbinghausCalendar from "./components/EbbinghausCalendar";
 
 // 路由配置
 export const router: RouteObject[] = [
   { path: "/", element: <Home /> },
   { path: "/study", element: <App /> },
   { path: "/about", element: <About /> },
+  { path: "/calendar", element: <EbbinghausCalendar /> },
+
   {
     path: "*", // 404 兜底路由
     element: <NotFound />,
