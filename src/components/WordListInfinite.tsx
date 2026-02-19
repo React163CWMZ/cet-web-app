@@ -3,6 +3,50 @@ import { Flex, Card, Spin, Typography, Space } from "antd";
 import useLocalforageDb from "../utils/useLocalforageDb";
 const { Text } = Typography;
 
+// 引入内联样式（也可抽离为单独的 CSS 文件）
+const styles = {
+  // 外层滚动容器样式
+  scrollContainer: {
+    width: "100%",
+    maxHeight: "calc(100vh - 25vh)",
+    overflow: "auto",
+    height: "600px",
+
+    padding: "6px 0px 0px 0px",
+    border: "1px solid #fafafa",
+    borderRadius: 8,
+    // 基础样式
+    "&::-webkit-scrollbar": {
+      width: "6px", // 竖滚动条宽度
+      height: "6px", // 横滚动条高度
+    },
+    // 滚动条轨道
+    "&::-webkit-scrollbar-track": {
+      background: "#f5f7fa",
+      borderRadius: "3px",
+    },
+    // 滚动条滑块
+    "&::-webkit-scrollbar-thumb": {
+      background: "#d1d9e6",
+      borderRadius: "3px",
+      transition: "background 0.2s ease",
+    },
+
+    // 滑块 hover 状态
+    "&::-webkit-scrollbar-thumb:hover": {
+      background: "#1677ff", // 呼应表头主色
+    },
+    "&::-webkit-scrollbar-thumb:active": {
+      background: "#86bfff",
+    },
+    // Firefox 兼容
+    scrollbarWidth: "thin",
+    scrollbarColor: "#d1d9e6 #f5f7fa",
+  } as React.CSSProperties,
+
+  // 保留其他原有样式...
+};
+
 // 1. 定义单词数据的接口
 interface WordItem {
   id: number;
@@ -142,17 +186,19 @@ const WordListInfinite: React.FC<WordListProps> = () => {
   };
 
   return (
-    <Card title="单词列表 (上拉加)" style={{ width: "100%", marginTop: 16 }}>
-      <div
-        onScroll={handleScroll}
-        style={{
-          height: "600px",
-          overflowY: "auto",
-          padding: "6px 0px 0px 0px",
-          border: "1px solid #f0f0f0",
-          borderRadius: 8,
-        }}
-      >
+    <Card
+      title="单词列表"
+      style={{ width: "100%", marginTop: 16, backgroundColor: "#fff" }}
+      styles={{
+        header: {
+          background: "#1677ff", // 顶部蓝色
+          color: "#fff",
+          fontSize: "16px",
+          fontWeight: 500,
+        },
+      }}
+    >
+      <div style={styles.scrollContainer} onScroll={handleScroll}>
         <Flex
           vertical
           gap="small"
@@ -164,11 +210,23 @@ const WordListInfinite: React.FC<WordListProps> = () => {
             <Card
               key={item.id}
               size="small"
-              style={{ backgroundColor: "#fafafa" }}
+              style={{ backgroundColor: "#fff", transition: "background 0.2s" }}
               styles={{}}
+              // hover 样式
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#e8f3ff"; // hover 背景色
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#ffffff"; // 恢复默认背景
+              }}
             >
-              <Text strong>{item.word}</Text>
-              <Text type="secondary" style={{ marginLeft: 8 }}>
+              <Text strong style={{ color: "#1d2129" }}>
+                {item.word}
+              </Text>
+              <Text
+                type="secondary"
+                style={{ marginLeft: 8, color: "#4e5969" }}
+              >
                 {item.meaning}
               </Text>
             </Card>
