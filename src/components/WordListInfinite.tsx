@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Flex, Card, Spin, Typography, Space, Row, Col, Button } from "antd";
 import useLocalforageDb from "../utils/useLocalforageDb";
+import { arrayDiff } from "../utils/arrayFunc";
 const { Text } = Typography;
 
 import { Checkbox } from "antd";
@@ -15,8 +16,8 @@ const styles = {
     overflow: "auto",
     // height: "600px",
 
-    padding: "6px 0px 0px 0px",
-    border: "1px solid #fafafa",
+    padding: "0px 0px 0px 0px",
+    border: "1px solid #fafafa", //
     borderRadius: 8,
     // 基础样式
     "&::WebkitScrollbar": {
@@ -55,6 +56,13 @@ interface WordItem {
   id: number;
   word: string;
   meaning: string;
+}
+
+// checkbox, auxiliary judgement which word need study, which word was already learned ago.
+interface WordSelected {
+  index: number;
+  word: string;
+  meaning?: string;
 }
 
 interface storedWord {
@@ -102,18 +110,29 @@ const WordListInfinite: React.FC<WordListProps> = () => {
 
   // select need learn word
   const [learn, setLearn] = useState<string[]>([]);
+  // known word at ago
+  const [known, setKnown] = useState<string[]>([]);
+  // judged word from dictionary. judged = learn + known
+  const [judged, setJudged] = useState<string[]>([]);
   // add argument word:string
-  type MyCheckboxProps = (e: CheckboxChangeEvent, word: string) => void;
-  const onChange: MyCheckboxProps = (e: CheckboxChangeEvent, word: string) => {
+  type MyCheckboxProps = (e: CheckboxChangeEvent, word: WordSelected) => void;
+  const onChange: MyCheckboxProps = (
+    e: CheckboxChangeEvent,
+    word: WordSelected,
+  ) => {
     if (e.target.checked === true) {
-      setLearn([...learn, word]);
+      // add to need learn
+      setLearn([...learn, word["word"]]);
     } else {
-      setLearn(learn.filter((item) => item !== word));
+      // delete word
+      setLearn(learn.filter((item) => item !== word["word"]));
     }
   };
   // save need learn word to database
   const saveLearn = () => {
-    console.log(learn);
+    const judged_words = data.map((obj: WordItem) => obj.word);
+    const known_words = arrayDiff<string>(judged_words, learn);
+    console.log(learn, judged_words, known_words);
   };
 
   // 使用 ref 存储页码，不需要泛型，number 类型即可
@@ -226,6 +245,12 @@ const WordListInfinite: React.FC<WordListProps> = () => {
           fontSize: "16px",
           fontWeight: 500,
         },
+        body: {
+          border: "1px solid #1677ff",
+          borderTop: 0,
+          padding: "3px 8px",
+          // boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.3)",
+        },
       }}
     >
       <div style={styles.scrollContainer} onScroll={handleScroll}>
@@ -233,15 +258,16 @@ const WordListInfinite: React.FC<WordListProps> = () => {
           vertical
           gap="small"
           style={{
-            padding: "0 6px",
+            padding: "6px 0 0 6px",
+            backgroundColor: "#fff",
           }}
         >
           {data.map((item, index) => (
             <Card
-              key={item.id}
+              key={index}
               size="small"
               style={{
-                backgroundColor: "#fff",
+                backgroundColor: "#f6f6f6",
                 transition: "background 0.2s",
               }}
               // hover 样式
@@ -249,7 +275,7 @@ const WordListInfinite: React.FC<WordListProps> = () => {
                 e.currentTarget.style.background = "#e8f3ff"; // hover 背景色
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#ffffff"; // 恢复默认背景
+                e.currentTarget.style.background = "#f6f6f6"; // 恢复默认背景
               }}
             >
               <Row
@@ -276,7 +302,9 @@ const WordListInfinite: React.FC<WordListProps> = () => {
                 <Col>
                   <Space align="end">
                     <Checkbox
-                      onChange={(e) => onChange(e, item.word)}
+                      onChange={(e) =>
+                        onChange(e, { index: index, word: item.word })
+                      }
                     ></Checkbox>
                   </Space>
                 </Col>
@@ -284,16 +312,21 @@ const WordListInfinite: React.FC<WordListProps> = () => {
             </Card>
           ))}
         </Flex>
-        <Spin spinning={loading} size="small" tip="加载中...">
+        <Spin
+          spinning={loading}
+          style={{ height: 40 }}
+          size="small"
+          tip="加载中..."
+        >
           <Flex justify="center" align="center" style={{ padding: "16px 0" }}>
             {loading ? (
               <Space />
             ) : !hasMore ? (
-              <Text type="secondary" style={{ fontSize: 12 }}>
+              <Text type="secondary" style={{ height: 40, fontSize: 16 }}>
                 —— 无单词或已经到底啦 ——
               </Text>
             ) : (
-              <Text type="secondary" style={{ fontSize: 12 }}>
+              <Text type="secondary" style={{ height: 40, fontSize: 16 }}>
                 下拉加载更多...
               </Text>
             )}
