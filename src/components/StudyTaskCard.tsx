@@ -1,6 +1,7 @@
 import React from "react";
-import { Card, List } from "antd";
+import { Card, Badge, Flex, Typography, Space } from "antd";
 // import type { StudyItem } from "./types"; // 如果抽离了类型，就导入
+const { Text } = Typography;
 
 // 类型定义
 interface StudyItem {
@@ -22,22 +23,48 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
   reviewTasks,
 }) => {
   return (
-    <Card title={`📌 ${selectedDay} 任务`}>
+    <Card title={`📌 ${selectedDay} 任务`} style={{ width: "100%" }}>
       <h4>📖 新学</h4>
-      <List
-        dataSource={learnTasks}
-        renderItem={(item) => <List.Item>{item.title}</List.Item>}
-        bordered
-        locale={{ emptyText: "今日暂无新学任务" }}
-      />
+      {learnTasks.length > 0 ? (
+        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+          {learnTasks.map((item, index) => (
+            <li
+              key={index}
+              style={{ padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}
+            >
+              <Space>
+                <Badge color="blue" />
+                {item.title}
+              </Space>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <Text type="secondary" style={{ fontStyle: "italic" }}>
+          今日暂无新学任务
+        </Text>
+      )}
 
       <h4 style={{ marginTop: 16 }}>🔁 复习</h4>
-      <List
-        dataSource={reviewTasks}
-        renderItem={(item) => <List.Item>{item.title}</List.Item>}
-        bordered
-        locale={{ emptyText: "今日暂无复习任务" }}
-      />
+      {reviewTasks.length > 0 ? (
+        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+          {reviewTasks.map((item, index) => (
+            <li
+              key={index}
+              style={{ padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}
+            >
+              <Space>
+                <Badge color="orange" />
+                {item.title}
+              </Space>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <Text type="secondary" style={{ fontStyle: "italic" }}>
+          今日暂无复习任务
+        </Text>
+      )}
     </Card>
   );
 };

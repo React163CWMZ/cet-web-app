@@ -11,8 +11,8 @@ interface StudyItem {
   learnDate: string; // 格式：YYYY-MM-DD
 }
 
-// 艾宾浩斯复习天数（只按天）
-const REVIEW_DAYS = [1, 2, 7, 15, 30];
+// 艾宾浩斯复习天数（只按天）,first review is the same day of learn date
+const REVIEW_DAYS = [0, 1, 3, 6, 14, 21, 29];
 
 // 工具函数：计算复习日期
 function getReviewDates(learnDate: string): string[] {
@@ -22,10 +22,13 @@ function getReviewDates(learnDate: string): string[] {
 }
 
 const EbbinghausCalendar: React.FC = () => {
+  dayjs.locale("zh-CN");
   // 模拟学习数据
   const [studyList] = useState<StudyItem[]>([
     { id: "1", title: "单词 Unit 1", learnDate: "2026-02-19" },
     { id: "2", title: "单词 Unit 2", learnDate: "2026-02-20" },
+    { id: "3", title: "单词 Unit 3", learnDate: "2026-02-21" },
+    { id: "4", title: "单词 Unit 4", learnDate: "2026-02-22" },
   ]);
 
   // 选中日期状态
@@ -53,7 +56,11 @@ const EbbinghausCalendar: React.FC = () => {
         {todayLearn.length > 0 && (
           <Badge
             color="blue"
-            text={`新学：${todayLearn.length}`}
+            text={
+              <>
+                <span style={{ fontSize: 10 }}>新学：{todayLearn.length}</span>
+              </>
+            }
             style={{ fontSize: 12 }}
           />
         )}
@@ -61,7 +68,9 @@ const EbbinghausCalendar: React.FC = () => {
         {todayReview.length > 0 && (
           <Badge
             color="orange"
-            text={`复习：${todayReview.length}`}
+            text={
+              <span style={{ fontSize: 10 }}>复习：{todayReview.length}</span>
+            }
             style={{ fontSize: 12 }}
           />
         )}
@@ -85,7 +94,7 @@ const EbbinghausCalendar: React.FC = () => {
   // 页面布局
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto", padding: 20 }}>
-      <h2>📅 艾宾浩斯记忆日历</h2>
+      <h2>📅 学习计划日历</h2>
       <div style={{ display: "flex", gap: 20 }}>
         {/* 左侧日历 */}
         <div style={{ flex: 2 }}>
