@@ -23,13 +23,26 @@ function getReviewDates(learnDate: string): string[] {
 
 const EbbinghausCalendar: React.FC = () => {
   dayjs.locale("zh-CN");
+
+  // 每天学习数据的构造
+
+  const n: number = 5; // 假设循环 5 次
+  let arr: StudyItem[] = [];
+
+  // real 学习数据
+  arr = Array.from({ length: n }, (_, index) => ({
+    id: (index + 1).toString(), // index 从 0 开始，所以 +1
+    title: `单词 Day ${index + 1}`,
+    learnDate: dayjs().add(index, "day").format("YYYY-MM-DD"),
+  }));
+  const [studyList] = useState<StudyItem[]>(arr);
   // 模拟学习数据
-  const [studyList] = useState<StudyItem[]>([
-    { id: "1", title: "单词 Unit 1", learnDate: "2026-02-19" },
-    { id: "2", title: "单词 Unit 2", learnDate: "2026-02-20" },
-    { id: "3", title: "单词 Unit 3", learnDate: "2026-02-21" },
-    { id: "4", title: "单词 Unit 4", learnDate: "2026-02-22" },
-  ]);
+  // const [studyList] = useState<StudyItem[]>([
+  //   { id: "1", title: "单词 Unit 1", learnDate: "2026-02-20" },
+  //   { id: "2", title: "单词 Unit 2", learnDate: "2026-02-21" },
+  //   { id: "3", title: "单词 Unit 3", learnDate: "2026-02-22" },
+  //   { id: "4", title: "单词 Unit 4", learnDate: "2026-02-23" },
+  // ]);
 
   // 选中日期状态
   const [selectedDay, setSelectedDay] = useState<string>(

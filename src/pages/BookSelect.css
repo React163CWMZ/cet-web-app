@@ -1,0 +1,53 @@
+.word-select-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+.title-wrapper {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.word-card {
+  border-radius: 16px;
+  text-align: center;
+  padding: 30px 20px;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.word-card.active {
+  border-color: #1677ff;
+  background-color: #e8f4ff;
+}
+
+.word-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  background-color: #e8f4ff;
+}
+
+.card-icon {
+  font-size: 32px;
+  color: #1677ff;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.card-desc {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.card-total {
+  font-size: 12px;
+  color: #999;
+}

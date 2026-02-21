@@ -26,7 +26,6 @@ const App: React.FC = () => {
   const [nextOneDisable, setNextOneDisable] = useState<boolean>(false);
 
   const nextOne = async () => {
-    console.log("cliked");
     try {
       setNextOneDisable(true);
       const storedData: storedWord | null = await juniorDB.getItem(
@@ -61,6 +60,7 @@ const App: React.FC = () => {
       } else {
         // 如果没有数据，可以设置默认值或者保持为空
         setWord("");
+        console.log("not word found");
       }
     } catch (err) {
       alert("读取失败：" + err);
@@ -317,7 +317,7 @@ const App: React.FC = () => {
             body: {
               flex: 1,
               overflowY: "auto", // 内容内部滚动
-              padding: "16px",
+              padding: "16",
             },
             actions: {
               backgroundColor: "#fafafa",
