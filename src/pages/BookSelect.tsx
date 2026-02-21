@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useRef } from "react";
-
+import dayjs, { Dayjs } from "dayjs";
 import {
   Card,
   Row,
@@ -19,6 +19,11 @@ import "./BookSelect.css";
 import useLocalforageDb from "../utils/useLocalforageDb";
 
 import { arrayShuffle } from "../utils/arrayFunc";
+import {
+  saveOneData,
+  saveListData,
+  clearStore,
+} from "../utils/useLocalforageDb";
 
 const { Title } = Typography;
 
@@ -43,6 +48,20 @@ interface storedWord {
   translations: string;
 }
 
+interface SchemeBrief {
+  book?: string;
+  wordsGroup: number;
+  groupNums: number;
+  startDay?: string;
+}
+
+// study scheme 类型定义
+interface StudyItem {
+  id: string;
+  title: string;
+  learnDate: string; // 格式：YYYY-MM-DD
+}
+
 // 每日学习数量
 type DailyCount = 20 | 30 | 40 | 50 | 60 | 70 | 80;
 
@@ -50,13 +69,16 @@ const BookSelect = () => {
   // 新增：用ref存储数据库实例，避免重复初始化
   const juniorDbRef = useRef(useLocalforageDb("MyDb", "juniorStore"));
   const juniorGroupDbRef = useRef(useLocalforageDb("MyDb", "juniorGroup"));
-  async function getAllDataFromStore() {
+  const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "SchemeBrief"));
+  const userSchemeDbRef = useRef(useLocalforageDb("MyDb", "userScheme"));
+  // read from db, save to array
+  async function getAllDataFromStore(Db: LocalForage) {
     const dataArray: groupWord[] = [];
 
     try {
       // 方法一：使用 iterate (推荐，效率高)
       // iterate 接收回调函数，遍历所有键值对
-      await juniorDbRef.current.iterate((value: storedWord, key) => {
+      await Db.iterate((value: storedWord, key) => {
         // 将每一条数据构造成对象，推入数组
 
         dataArray.push({
@@ -71,34 +93,6 @@ const BookSelect = () => {
       return dataArray;
     } catch (err) {
       console.error("读取数据失败:", err);
-    }
-  }
-
-  // save group of word to db
-  async function saveData(list: groupWord[]) {
-    try {
-      await Promise.all(
-        list.map((value, index) => {
-          return juniorGroupDbRef.current.setItem(
-            (index + 1).toString(),
-            value,
-          );
-        }),
-      );
-      console.log("导入成功！");
-    } catch (err) {
-      console.error("导入失败:", err);
-      // 这里可以添加更复杂的错误处理逻辑，例如重试或用户提示
-    }
-  }
-
-  // 清空 store 下的所有数据
-  async function clearStore(Db: LocalForage) {
-    try {
-      await Db.clear();
-      console.log("仓库已清空");
-    } catch (err) {
-      console.error("清空失败:", err);
     }
   }
 
@@ -123,12 +117,15 @@ const BookSelect = () => {
   const handleSelectBook = (item: BookItem) => {
     if (item["key"] === "junior") {
       // console.log(item);
-      getAllDataFromStore().then((data) => {
+      getAllDataFromStore(juniorDbRef.current).then((data) => {
         if (data) {
           setSelectedBook({ ...item, totalWords: data.length });
           setAllData(data);
         }
       });
+    } else {
+      console.log(item["key"]);
+      return;
     }
 
     setDailyCount(30);
@@ -144,6 +141,21 @@ const BookSelect = () => {
   const handleConfirmPlan = () => {
     setPlanModalVisible(false);
 
+    let mySchemeBrief: SchemeBrief = {
+      book: selectedBook?.title,
+      wordsGroup: dailyCount,
+      groupNums: totalDays,
+      startDay: dayjs(new Date().getTime()).format("YYYY-MM-DD"),
+    };
+
+    try {
+      // clear data, then save new
+      clearStore(SchemeBriefDbRef.current);
+      saveOneData(SchemeBriefDbRef.current, mySchemeBrief);
+    } catch (err) {
+      // pop windows , prompt try again
+    }
+
     // group words
     const result: groupWord[] = arrayShuffle(allData).map((item, index) => {
       return {
@@ -153,7 +165,23 @@ const BookSelect = () => {
     });
 
     clearStore(juniorGroupDbRef.current);
-    saveData(result);
+    saveListData<groupWord>(juniorGroupDbRef.current, result);
+
+    // 每天学习数据的构造
+
+    const n: number = totalDays; // 假设循环 5 次
+    let schemeArr: StudyItem[] = [];
+    // create new scheme must clear userScheme db at first.
+    // real 学习数据
+    schemeArr = Array.from({ length: n }, (_, index) => ({
+      id: (index + 1).toString(), // index 从 0 开始，所以 +1
+      title: `单词 Day ${index + 1}`,
+      learnDate: dayjs().add(index, "day").format("YYYY-MM-DD"),
+    }));
+
+    clearStore(userSchemeDbRef.current);
+    // save scheme to db, review scheme gene by getReviewDates()
+    saveListData<StudyItem>(userSchemeDbRef.current, schemeArr);
 
     message.success(
       `已选择：${selectedBook?.title}，每天 ${dailyCount} 个，共 ${totalDays} 天`,
@@ -165,6 +193,7 @@ const BookSelect = () => {
         wordBook: selectedBook,
         dailyCount,
         totalDays,
+        startDay: "",
       },
     });
   };
@@ -216,6 +245,7 @@ const BookSelect = () => {
             value={dailyCount}
             onChange={(e) => setDailyCount(e.target.value as DailyCount)}
           >
+            <Radio value={20}>每天 20 个</Radio>
             <Radio value={30}>每天 30 个</Radio>
             <Radio value={40}>每天 40 个</Radio>
             <Radio value={50}>每天 50 个</Radio>

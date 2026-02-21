@@ -14,3 +14,8 @@ export function arrayShuffle<T>(array: T[]): T[] {
   }
   return copy;
 }
+
+// Empty of arr return false, or return true
+export function isArrayNonEmpty<T>(arr: T | null | undefined): boolean {
+  return Array.isArray(arr) && arr.length > 0;
+}

@@ -9,8 +9,8 @@ const StudyCalendar = () => {
   // 引入 useLocation 钩子接收参数
   const location = useLocation();
   //解构参数（加类型注解更规范）
-  const { wordBook, dailyCount, totalDays } = location.state || {};
-
+  const { wordBook, dailyCount, totalDays, startDay } = location.state || {};
+  const name: string = wordBook?.title;
   return (
     <>
       <ConfigProvider locale={zhCN}>
@@ -20,7 +20,12 @@ const StudyCalendar = () => {
         <p>单词本：{wordBook?.title}</p>
         <p>每日学习：{dailyCount} 个</p>
         <p>预计天数：{totalDays} 天</p>
-        <EbbinghausCalendar />
+        <EbbinghausCalendar
+          book={name}
+          wordsGroup={dailyCount}
+          groupNums={totalDays}
+          startDay={startDay}
+        />
       </ConfigProvider>
     </>
   );

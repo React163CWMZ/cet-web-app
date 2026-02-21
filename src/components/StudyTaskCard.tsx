@@ -1,4 +1,5 @@
 import React from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Card, Badge, Flex, Typography, Space } from "antd";
 // import type { StudyItem } from "./types"; // 如果抽离了类型，就导入
 const { Text } = Typography;
@@ -22,6 +23,7 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
   learnTasks,
   reviewTasks,
 }) => {
+  const navigate = useNavigate();
   return (
     <Card title={`📌 ${selectedDay} 任务`} style={{ width: "100%" }}>
       <h4>📖 新学</h4>
@@ -29,6 +31,7 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {learnTasks.map((item, index) => (
             <li
+              onClick={() => navigate("/study")}
               key={index}
               style={{ padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}
             >
@@ -50,6 +53,7 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {reviewTasks.map((item, index) => (
             <li
+              onClick={() => navigate("/study")}
               key={index}
               style={{ padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}
             >

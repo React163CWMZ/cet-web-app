@@ -1,14 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Calendar, Badge } from "antd";
 import type { CalendarProps } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 import StudyTaskCard from "./StudyTaskCard";
+import useLocalforageDb from "../utils/useLocalforageDb";
+import { isArrayNonEmpty } from "../utils/arrayFunc";
+import { getOneData } from "../utils/useLocalforageDb";
 
-// 类型定义
+// study scheme 类型定义
 interface StudyItem {
   id: string;
   title: string;
   learnDate: string; // 格式：YYYY-MM-DD
+}
+
+interface SchemeBrief {
+  book: string;
+  wordsGroup: number;
+  groupNums: number;
+  startDay?: string;
+}
+
+interface SchemeList {
+  id: string;
+  title: string;
+  learnDate: string;
 }
 
 // 艾宾浩斯复习天数（只按天）,first review is the same day of learn date
@@ -21,28 +37,55 @@ function getReviewDates(learnDate: string): string[] {
   );
 }
 
-const EbbinghausCalendar: React.FC = () => {
+const EbbinghausCalendar: React.FC<SchemeBrief> = ({
+  book,
+  wordsGroup,
+  groupNums,
+  startDay,
+}) => {
   dayjs.locale("zh-CN");
+  // console.log(book, wordsGroup, groupNums);
 
+  let mySchemeBrief: SchemeBrief | null = null;
+  const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "SchemeBrief"));
+  try {
+    getOneData(SchemeBriefDbRef.current).then((data) => {
+      if (data) {
+        mySchemeBrief = data as SchemeBrief;
+      }
+    });
+  } catch (err) {
+    // pop windows , prompt try again
+  }
+
+  // 新增：用ref存储数据库实例，避免重复初始化
+  const userSchemeDbRef = useRef(useLocalforageDb("MyDb", "userScheme"));
   // 每天学习数据的构造
+  const n: number = groupNums; // 假设循环 5 次
+  let schemeArr: StudyItem[] = [];
 
-  const n: number = 5; // 假设循环 5 次
-  let arr: StudyItem[] = [];
+  const [studyList, setStudyList] = useState<StudyItem[]>(schemeArr);
+  // get scheme from db
+  getSchemeData(userSchemeDbRef.current).then((data) => {
+    if (data) {
+      schemeArr = data;
+      setStudyList(schemeArr);
+    } else {
+      // throw new error
+    }
+  });
 
-  // real 学习数据
-  arr = Array.from({ length: n }, (_, index) => ({
-    id: (index + 1).toString(), // index 从 0 开始，所以 +1
-    title: `单词 Day ${index + 1}`,
-    learnDate: dayjs().add(index, "day").format("YYYY-MM-DD"),
-  }));
-  const [studyList] = useState<StudyItem[]>(arr);
-  // 模拟学习数据
-  // const [studyList] = useState<StudyItem[]>([
-  //   { id: "1", title: "单词 Unit 1", learnDate: "2026-02-20" },
-  //   { id: "2", title: "单词 Unit 2", learnDate: "2026-02-21" },
-  //   { id: "3", title: "单词 Unit 3", learnDate: "2026-02-22" },
-  //   { id: "4", title: "单词 Unit 4", learnDate: "2026-02-23" },
-  // ]);
+  async function getSchemeData(Db: LocalForage) {
+    const result: StudyItem[] = [];
+    try {
+      await Db.iterate((values: StudyItem, key) => {
+        result.push(values);
+      });
+      return result; // 数据拿到后再执行后续逻辑
+    } catch (err) {
+      console.error("读取失败", err);
+    }
+  }
 
   // 选中日期状态
   const [selectedDay, setSelectedDay] = useState<string>(

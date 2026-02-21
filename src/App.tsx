@@ -6,6 +6,7 @@ import juniorList from "./assets/junior_data.ts";
 import seniorList from "./assets/senior_data.ts";
 import wordList from "./assets/data_json.ts";
 import allWordList from "./assets/data_all_word.ts";
+import { clearStore } from "./utils/useLocalforageDb.tsx";
 const App: React.FC = () => {
   // 定义一个通用的 JSON 类型
   type JsonObject = Record<string, any>;
@@ -194,7 +195,8 @@ const App: React.FC = () => {
   }
 
   const importData = () => {
-    importJsonData(tryList);
+    clearStore(juniorDB);
+    importJsonData(juniorList);
   };
   const importDataAll = () => {
     importJsonDataAll();
