@@ -1,8 +1,9 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import StudyTaskCard from "../components/StudyTaskCard";
 import useLocalforageDb, { getOneData } from "../utils/useLocalforageDb";
+import { getReviewDates } from "../utils/studyCommon";
 
 // study scheme 类型定义
 interface StudyItem {
@@ -24,24 +25,22 @@ interface SchemeList {
   learnDate: string;
 }
 
-// 艾宾浩斯复习天数（只按天）,first review is the same day of learn date
-const REVIEW_DAYS = [0, 1, 3, 6, 14, 21, 29];
-
-// 工具函数：计算复习日期
-function getReviewDates(learnDate: string): string[] {
-  return REVIEW_DAYS.map((day) =>
-    dayjs(learnDate).add(day, "day").format("YYYY-MM-DD"),
-  );
-}
-
 const StudyDay = () => {
   const navigate = useNavigate();
+  console.log("123");
 
   // 引入 useLocation 钩子接收参数
   const location = useLocation();
   //解构参数（加类型注解更规范）
   // const { wordBook, dailyCount, totalDays, startDay } = location.state || {};
   // const name: string = wordBook?.title;
+
+  const [selectedLearn, setSelectedLearn] = useState<StudyItem[]>([]);
+  const [selectedReview, setSelectedReview] = useState<StudyItem[]>([]);
+  // 选中日期状态;默认是今天
+  const [selectedDay, setSelectedDay] = useState<string>(
+    dayjs().format("YYYY-MM-DD"),
+  );
 
   const mySchemeBriefRef = useRef<SchemeBrief>(null);
   const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "SchemeBrief"));
@@ -57,20 +56,6 @@ const StudyDay = () => {
 
   // 新增：用ref存储数据库实例，避免重复初始化
   const userSchemeDbRef = useRef(useLocalforageDb("MyDb", "userScheme"));
-  // 每天学习数据的构造
-  // const n: number = groupNums; // 假设循环 5 次
-  let schemeArr: StudyItem[] = [];
-
-  const [studyList, setStudyList] = useState<StudyItem[]>(schemeArr);
-  // get scheme from db
-  getSchemeData(userSchemeDbRef.current).then((data) => {
-    if (data) {
-      schemeArr = data;
-      setStudyList(schemeArr);
-    } else {
-      // throw new error
-    }
-  });
 
   async function getSchemeData(Db: LocalForage) {
     const result: StudyItem[] = [];
@@ -83,18 +68,56 @@ const StudyDay = () => {
       console.error("读取失败", err);
     }
   }
-  // 选中日期状态;
-  const [selectedDay, setSelectedDay] = useState<string>(
-    dayjs().format("YYYY-MM-DD"),
-  );
 
-  // 计算选中日期的任务
-  const selectedLearn = studyList.filter(
-    (item) => item.learnDate === selectedDay,
-  );
-  const selectedReview = studyList.filter((item) =>
-    new Set(getReviewDates(item.learnDate)).has(selectedDay),
-  );
+  useEffect(() => {
+    // 每天学习数据的构造
+    let schemeArr: StudyItem[] = [];
+
+    // get scheme from db
+    getSchemeData(userSchemeDbRef.current).then((data) => {
+      if (data) {
+        schemeArr = data;
+
+        // setSelectedDay(dayjs().format("YYYY-MM-DD"));
+        // 计算选中日期的任务
+        setSelectedLearn(
+          schemeArr.filter((item) => item.learnDate === selectedDay),
+        );
+
+        setSelectedReview(
+          schemeArr.filter((item) =>
+            new Set(getReviewDates(item.learnDate)).has(selectedDay),
+          ),
+        );
+      } else {
+        // throw new error
+      }
+    });
+  }, []);
+
+  // // 获取昨天的日期
+  // const [yesterDay, setYesterDayDay] = useState<string>(
+  //   dayjs().subtract(1, "day").format("YYYY-MM-DD"),
+  // );
+
+  // // 计算选中日期的任务
+  // const yesterLearn = studyList.filter((item) => item.learnDate === yesterDay);
+  // const yesterReview = studyList.filter((item) =>
+  //   new Set(getReviewDates(item.learnDate)).has(yesterDay),
+  // );
+
+  // // 获取明天的日期
+  // const [tomorrowDay, setTomorrowDay] = useState<string>(
+  //   dayjs().add(1, "day").format("YYYY-MM-DD"),
+  // );
+
+  // // 计算选中日期的任务
+  // const tomorrowLearn = studyList.filter(
+  //   (item) => item.learnDate === tomorrowDay,
+  // );
+  // const tomorrowReview = studyList.filter((item) =>
+  //   new Set(getReviewDates(item.learnDate)).has(tomorrowDay),
+  // );
 
   // 页面布局
   return (
@@ -112,6 +135,7 @@ const StudyDay = () => {
         {/* 右侧任务卡片（子组件） */}
         <div style={{ flex: 1 }}>
           <StudyTaskCard
+            isActive={true}
             selectedDay={selectedDay}
             learnTasks={selectedLearn}
             reviewTasks={selectedReview}

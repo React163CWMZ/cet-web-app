@@ -62,6 +62,23 @@ interface StudyItem {
   learnDate: string; // 格式：YYYY-MM-DD
 }
 
+interface ReviewItem {
+  id: string;
+  studyId: string;
+  title: string;
+  reviewDate: string; // 格式：YYYY-MM-DD
+}
+
+// 艾宾浩斯复习天数（只按天）,first review is the same day of learn date
+const REVIEW_DAYS = [0, 1, 3, 6, 14, 21, 29];
+
+// 工具函数：计算复习日期
+function getReviewDates(learnDate: string): string[] {
+  return REVIEW_DAYS.map((day) =>
+    dayjs(learnDate).add(day, "day").format("YYYY-MM-DD"),
+  );
+}
+
 // 每日学习数量
 type DailyCount = 20 | 30 | 40 | 50 | 60 | 70 | 80;
 
@@ -71,6 +88,7 @@ const BookSelect = () => {
   const juniorGroupDbRef = useRef(useLocalforageDb("MyDb", "juniorGroup"));
   const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "SchemeBrief"));
   const userSchemeDbRef = useRef(useLocalforageDb("MyDb", "userScheme"));
+  const reviewSchemeDbRef = useRef(useLocalforageDb("MyDb", "reviewScheme"));
   // read from db, save to array
   async function getAllDataFromStore(Db: LocalForage) {
     const dataArray: groupWord[] = [];
@@ -182,6 +200,22 @@ const BookSelect = () => {
     clearStore(userSchemeDbRef.current);
     // save scheme to db, review scheme gene by getReviewDates()
     saveListData<StudyItem>(userSchemeDbRef.current, schemeArr);
+
+    // calculate review day ,and save to db
+    const resultArr: ReviewItem[] = schemeArr.flatMap((item) => {
+      // 获取该单词的所有复习日期
+      const reviewDates = getReviewDates(item.learnDate);
+
+      // 将每个复习日期与原对象的 id、title 组合成新对象
+      return reviewDates.map((date, index) => ({
+        id: (index + 1).toString(),
+        studyId: item.id,
+        title: item.title,
+        reviewDate: date, // 这里使用 reviewDate 作为新字段名
+      }));
+    });
+
+    saveListData<ReviewItem>(reviewSchemeDbRef.current, resultArr);
 
     message.success(
       `已选择：${selectedBook?.title}，每天 ${dailyCount} 个，共 ${totalDays} 天`,

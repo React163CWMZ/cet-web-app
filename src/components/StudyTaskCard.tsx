@@ -12,6 +12,7 @@ interface StudyItem {
 }
 
 interface StudyTaskCardProps {
+  isActive: boolean;
   selectedDay: string;
   learnTasks: StudyItem[];
   reviewTasks: StudyItem[];
@@ -19,6 +20,7 @@ interface StudyTaskCardProps {
 
 // 专注于渲染任务列表的子组件
 const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
+  isActive,
   selectedDay,
   learnTasks,
   reviewTasks,
@@ -37,15 +39,17 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
               <Space>
                 <Badge color="blue" />
                 {item.title}
-                <Button
-                  type="link"
-                  color="pink"
-                  onClick={() =>
-                    navigate("/study", { state: { group: item.id } })
-                  }
-                >
-                  开始学习
-                </Button>
+                {isActive && (
+                  <Button
+                    type="link"
+                    color="pink"
+                    onClick={() =>
+                      navigate("/study", { state: { group: item.id } })
+                    }
+                  >
+                    开始学习
+                  </Button>
+                )}
               </Space>
             </li>
           ))}
@@ -67,15 +71,17 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
               <Space>
                 <Badge color="orange" />
                 {item.title}
-                <Button
-                  type="link"
-                  color="pink"
-                  onClick={() =>
-                    navigate("/study", { state: { group: item.id } })
-                  }
-                >
-                  开始复习
-                </Button>
+                {isActive && (
+                  <Button
+                    type="link"
+                    color="pink"
+                    onClick={() =>
+                      navigate("/study", { state: { group: item.id } })
+                    }
+                  >
+                    开始复习
+                  </Button>
+                )}
               </Space>
             </li>
           ))}

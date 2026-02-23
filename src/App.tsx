@@ -52,7 +52,7 @@ const App: React.FC = () => {
   const juniorGroupDbRef = useRef(useLocalforageDb("MyDb", "juniorGroup"));
 
   // 倒计时数字
-  const [count, setCount] = useState(3);
+  const [count, setCount] = useState(1);
   // 是否结束倒计时
   const [isCountFinish, setIsCountFinish] = useState(false);
 
@@ -422,7 +422,8 @@ const App: React.FC = () => {
         }}
       >
         <Title level={1} style={{ fontSize: 120, color: "#ffe8cc" }}>
-          {count}
+          {/* {count} */}
+          Start
         </Title>
       </Flex>
     );

@@ -1,9 +1,10 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Calendar, Badge } from "antd";
 import type { CalendarProps } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 import StudyTaskCard from "./StudyTaskCard";
 import useLocalforageDb, { getOneData } from "../utils/useLocalforageDb";
+import { getReviewDates } from "../utils/studyCommon";
 
 // study scheme 类型定义
 interface StudyItem {
@@ -25,21 +26,10 @@ interface SchemeList {
   learnDate: string;
 }
 
-// 艾宾浩斯复习天数（只按天）,first review is the same day of learn date
-const REVIEW_DAYS = [0, 1, 3, 6, 14, 21, 29];
-
-// 工具函数：计算复习日期
-function getReviewDates(learnDate: string): string[] {
-  return REVIEW_DAYS.map((day) =>
-    dayjs(learnDate).add(day, "day").format("YYYY-MM-DD"),
-  );
-}
-
 const EbbinghausCalendar: React.FC<SchemeBrief> = () => {
   // console.log(book, wordsGroup, groupNums);
-  // console.log("333", new Set(getReviewDates("2026-02-22")));
-  // return;
 
+  const [schemeList, setSchemeList] = useState<StudyItem[]>([]);
   let mySchemeBrief: SchemeBrief | null = null;
   const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "SchemeBrief"));
   try {
@@ -54,20 +44,6 @@ const EbbinghausCalendar: React.FC<SchemeBrief> = () => {
 
   // 新增：用ref存储数据库实例，避免重复初始化
   const userSchemeDbRef = useRef(useLocalforageDb("MyDb", "userScheme"));
-  // 每天学习数据的构造
-  // const n: number = groupNums; // 假设循环 5 次
-  let schemeArr: StudyItem[] = [];
-
-  const [studyList, setStudyList] = useState<StudyItem[]>(schemeArr);
-  // get scheme from db
-  getSchemeData(userSchemeDbRef.current).then((data) => {
-    if (data) {
-      schemeArr = data;
-      setStudyList(schemeArr);
-    } else {
-      // throw new error
-    }
-  });
 
   async function getSchemeData(Db: LocalForage) {
     const result: StudyItem[] = [];
@@ -81,11 +57,6 @@ const EbbinghausCalendar: React.FC<SchemeBrief> = () => {
     }
   }
 
-  // 选中日期状态;
-  const [selectedDay, setSelectedDay] = useState<string>(
-    dayjs().format("YYYY-MM-DD"),
-  );
-
   // 日历单元格渲染逻辑
   const cellRender: CalendarProps<Dayjs>["cellRender"] = (
     date: Dayjs,
@@ -93,10 +64,12 @@ const EbbinghausCalendar: React.FC<SchemeBrief> = () => {
   ) => {
     // info.type 可以区分单元格类型：date（日期）、month（月份）、year（年份）等
     if (info.type === "date") {
+      // 获取学习scheme数据
+
       // 这里实现原 dateCellRender 的逻辑
       const today = date.format("YYYY-MM-DD");
-      const todayLearn = studyList.filter((item) => item.learnDate === today);
-      const todayReview = studyList.filter((item) =>
+      const todayLearn = schemeList.filter((item) => item.learnDate === today);
+      const todayReview = schemeList.filter((item) =>
         new Set(getReviewDates(item.learnDate)).has(today),
       );
 
@@ -135,13 +108,37 @@ const EbbinghausCalendar: React.FC<SchemeBrief> = () => {
     setSelectedDay(value.format("YYYY-MM-DD"));
   };
 
-  // 计算选中日期的任务
-  const selectedLearn = studyList.filter(
-    (item) => item.learnDate === selectedDay,
+  // 选中current日期状态;
+  const [selectedDay, setSelectedDay] = useState<string>(
+    dayjs().format("YYYY-MM-DD"),
   );
-  const selectedReview = studyList.filter((item) =>
-    new Set(getReviewDates(item.learnDate)).has(selectedDay),
-  );
+  const [selectedLearn, setSelectedLearn] = useState<StudyItem[]>([]);
+  const [selectedReview, setSelectedReview] = useState<StudyItem[]>([]);
+
+  useEffect(() => {
+    // 获取学习scheme数据
+    let schemeArr: StudyItem[] = [];
+
+    // get scheme from db
+    getSchemeData(userSchemeDbRef.current).then((data) => {
+      if (data) {
+        schemeArr = data;
+        setSchemeList(schemeArr);
+        // 计算选中日期的任务
+        setSelectedLearn(
+          schemeArr.filter((item) => item.learnDate === selectedDay),
+        );
+
+        setSelectedReview(
+          schemeArr.filter((item) =>
+            new Set(getReviewDates(item.learnDate)).has(selectedDay),
+          ),
+        );
+      } else {
+        // throw new error
+      }
+    });
+  }, [userSchemeDbRef, selectedDay]);
 
   // 页面布局
   return (
@@ -162,6 +159,7 @@ const EbbinghausCalendar: React.FC<SchemeBrief> = () => {
         {/* 右侧任务卡片（子组件） */}
         <div style={{ flex: 1 }}>
           <StudyTaskCard
+            isActive={true}
             selectedDay={selectedDay}
             learnTasks={selectedLearn}
             reviewTasks={selectedReview}
