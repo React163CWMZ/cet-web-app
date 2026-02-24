@@ -20,22 +20,16 @@ interface SchemeBrief {
   startDay?: string;
 }
 
-interface SchemeList {
-  id: string;
-  title: string;
-  learnDate: string;
-}
-
 const EbbinghausCalendar: React.FC<SchemeBrief> = () => {
   // console.log(book, wordsGroup, groupNums);
 
   const [schemeList, setSchemeList] = useState<StudyItem[]>([]);
-  let mySchemeBrief: SchemeBrief | null = null;
+  // let mySchemeBrief: SchemeBrief | null = null;
   const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "SchemeBrief"));
   try {
     getOneData(SchemeBriefDbRef.current).then((data) => {
       if (data) {
-        mySchemeBrief = data as SchemeBrief;
+        // mySchemeBrief = data as SchemeBrief;
       }
     });
   } catch (err) {
@@ -48,7 +42,7 @@ const EbbinghausCalendar: React.FC<SchemeBrief> = () => {
   async function getSchemeData(Db: LocalForage) {
     const result: StudyItem[] = [];
     try {
-      await Db.iterate((values: StudyItem, key) => {
+      await Db.iterate((values: StudyItem) => {
         result.push(values);
       });
       return result; // 数据拿到后再执行后续逻辑

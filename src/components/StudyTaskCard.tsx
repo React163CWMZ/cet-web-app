@@ -1,6 +1,6 @@
 import React from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Card, Badge, Flex, Typography, Space, Button } from "antd";
+import { useNavigate } from "react-router-dom";
+import { Card, Badge, Typography, Space, Button } from "antd";
 // import type { StudyItem } from "./types"; // 如果抽离了类型，就导入
 const { Text } = Typography;
 

@@ -1,10 +1,10 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import EbbinghausCalendar from "../components/EbbinghausCalendar";
 import { ConfigProvider } from "antd";
 import zhCN from "antd/locale/zh_CN";
 
 const StudyCalendar = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   // 引入 useLocation 钩子接收参数
   const location = useLocation();

@@ -1,6 +1,5 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import React, { useState, useRef, useEffect } from "react";
-import dayjs, { Dayjs } from "dayjs";
+import { useState, useRef, useEffect } from "react";
+import dayjs from "dayjs";
 import StudyTaskCard from "../components/StudyTaskCard";
 import useLocalforageDb, { getOneData } from "../utils/useLocalforageDb";
 import { getReviewDates } from "../utils/studyCommon";
@@ -19,18 +18,12 @@ interface SchemeBrief {
   startDay?: string;
 }
 
-interface SchemeList {
-  id: string;
-  title: string;
-  learnDate: string;
-}
-
 const StudyDay = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   console.log("123");
 
   // 引入 useLocation 钩子接收参数
-  const location = useLocation();
+  // const location = useLocation();
   //解构参数（加类型注解更规范）
   // const { wordBook, dailyCount, totalDays, startDay } = location.state || {};
   // const name: string = wordBook?.title;
@@ -38,9 +31,7 @@ const StudyDay = () => {
   const [selectedLearn, setSelectedLearn] = useState<StudyItem[]>([]);
   const [selectedReview, setSelectedReview] = useState<StudyItem[]>([]);
   // 选中日期状态;默认是今天
-  const [selectedDay, setSelectedDay] = useState<string>(
-    dayjs().format("YYYY-MM-DD"),
-  );
+  const [selectedDay] = useState<string>(dayjs().format("YYYY-MM-DD"));
 
   const mySchemeBriefRef = useRef<SchemeBrief>(null);
   const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "SchemeBrief"));
@@ -60,7 +51,7 @@ const StudyDay = () => {
   async function getSchemeData(Db: LocalForage) {
     const result: StudyItem[] = [];
     try {
-      await Db.iterate((values: StudyItem, key) => {
+      await Db.iterate((values: StudyItem) => {
         result.push(values);
       });
       return result; // 数据拿到后再执行后续逻辑

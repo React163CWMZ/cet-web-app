@@ -5,7 +5,7 @@ import { arrayDiff } from "../utils/arrayFunc";
 const { Text } = Typography;
 
 import { Checkbox } from "antd";
-import type { CheckboxChangeEvent, CheckboxProps } from "antd";
+import type { CheckboxChangeEvent } from "antd";
 
 // 引入内联样式（也可抽离为单独的 CSS 文件）
 const styles = {
@@ -91,16 +91,16 @@ function connectTranslations(translations: TranslationsItem[]): string {
   return str;
 }
 
-// 定义一个“单词穷尽”异常
-class WordEndException extends Error {
-  constructor(msg: string) {
-    // 调用父类构造函数，设置 message
-    super(`单词穷尽${msg}`);
+//// 定义一个“单词穷尽”异常
+// class WordEndException extends Error {
+//   constructor(msg: string) {
+//     // 调用父类构造函数，设置 message
+//     super(`单词穷尽${msg}`);
 
-    // 设置错误名称，便于识别
-    this.name = "WordEndException";
-  }
-}
+//     // 设置错误名称，便于识别
+//     this.name = "WordEndException";
+//   }
+// }
 
 const WordListInfinite: React.FC<WordListProps> = () => {
   // 3. 为 state 添加类型：WordItem 数组
@@ -110,10 +110,9 @@ const WordListInfinite: React.FC<WordListProps> = () => {
 
   // select need learn word
   const [learn, setLearn] = useState<string[]>([]);
-  // known word at ago
-  const [known, setKnown] = useState<string[]>([]);
+
   // judged word from dictionary. judged = learn + known
-  const [judged, setJudged] = useState<string[]>([]);
+  // const [judged, setJudged] = useState<string[]>([]);
   // add argument word:string
   type MyCheckboxProps = (e: CheckboxChangeEvent, word: WordSelected) => void;
   const onChange: MyCheckboxProps = (

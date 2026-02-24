@@ -1,16 +1,14 @@
 import { Card, Space, Button, Flex, Typography } from "antd"; // 1. 导入 Card 组件
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import localforage from "localforage";
-import tryList from "./assets/try_data.ts";
 import juniorList from "./assets/junior_data.ts";
 import seniorList from "./assets/senior_data.ts";
-import wordList from "./assets/data_json.ts";
 import allWordList from "./assets/data_all_word.ts";
 import useLocalforageDb, { clearStore } from "./utils/useLocalforageDb.ts";
 import { getAllDataFromStore, isArrayNonEmpty } from "./utils/arrayFunc.ts";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 // 定义一个通用的 JSON 类型
 type JsonObject = Record<string, any>;
@@ -40,7 +38,7 @@ const App: React.FC = () => {
 
   const [wordIndex, setWordIndex] = useState<number>(1); // 定义状态
   const [word, setWord] = useState<string>(); // 定义状态，默认值可以是空数组或 null
-  const [translations, setTranslations] = useState<string>();
+  // const [translations, setTranslations] = useState<string>();
   const [translationsArr, setTranslationsArr] = useState<TranslationsItem[]>();
   const [nextOneDisable, setNextOneDisable] = useState<boolean>(false);
   const [preOneDisable, setPreOneDisable] = useState<boolean>(false);
@@ -94,7 +92,7 @@ const App: React.FC = () => {
       // current word index, make pre or next
       preWordRef.current = (needWord[0]["index"] as number) - 1;
       setWordIndex((needWord[0]["index"] as number) + 1);
-      const storedData: storedWord | null = await juniorDB.getItem(
+      const storedData: storedWord | null = await juniorDbRef.current.getItem(
         needWord[0]["word"],
       );
       // console.log("333==", wordData, needWord, wordIndex, storedData);
@@ -155,7 +153,7 @@ const App: React.FC = () => {
       // current word index, make pre or next
       preWordRef.current = (needWord[0]["index"] as number) - 1;
       setWordIndex((needWord[0]["index"] as number) + 1);
-      const storedData: storedWord | null = await juniorDB.getItem(
+      const storedData: storedWord | null = await juniorDbRef.current.getItem(
         needWord[0]["word"],
       );
       console.log("000==", wordData, needWord, wordIndex, storedData);
@@ -196,25 +194,25 @@ const App: React.FC = () => {
       setPreOneDisable(false);
     }
   };
-  // 单词数据库：MyDb
-  const juniorDB: LocalForage = localforage.createInstance({
-    name: "MyDb", //数据库名
-    storeName: "juniorStore", // 类似于表名
-  });
-  // 单词数据库：MySenior
-  const allWordDB = localforage.createInstance({
-    name: "AllWORD", //数据库名
-    storeName: "wordStore", // 类似于表名
-  });
-  // 中文释义
-  function connectTranslations(translations: TranslationsItem[]): string {
-    let str: string = "";
-    for (const value of translations) {
-      console.log(value.translation, value.type);
-      str += value.translation + " " + value.type;
-    }
-    return str;
-  }
+  // // 单词数据库：MyDb
+  // const juniorDB: LocalForage = localforage.createInstance({
+  //   name: "MyDb", //数据库名
+  //   storeName: "juniorStore", // 类似于表名
+  // });
+  // // 单词数据库：MySenior
+  // const allWordDB = localforage.createInstance({
+  //   name: "AllWORD", //数据库名
+  //   storeName: "wordStore", // 类似于表名
+  // });
+  // // 中文释义
+  // function connectTranslations(translations: TranslationsItem[]): string {
+  //   let str: string = "";
+  //   for (const value of translations) {
+  //     console.log(value.translation, value.type);
+  //     str += value.translation + " " + value.type;
+  //   }
+  //   return str;
+  // }
 
   async function importJsonData(List: JsonObject) {
     try {
@@ -222,8 +220,8 @@ const App: React.FC = () => {
 
       const entries = Object.entries(List);
       await Promise.all(
-        entries.map(([key, value]) => {
-          return juniorDB.setItem(value["word"], {
+        entries.map(([_, value]) => {
+          return juniorDbRef.current.setItem(value["word"], {
             word: value["word"],
             translations: value["translations"],
           });
@@ -254,7 +252,7 @@ const App: React.FC = () => {
 
   async function getData() {
     try {
-      const storedData: storedWord | null = await juniorDB.getItem(
+      const storedData: storedWord | null = await juniorDbRef.current.getItem(
         wordIndex.toString(),
       );
 
@@ -277,7 +275,7 @@ const App: React.FC = () => {
       const entries = Object.entries(seniorList);
       let myArr: Array<string> = [];
       let myJson: any;
-      entries.map(([key, value]) => {
+      entries.map(([_, value]) => {
         myArr.push(value["word"]);
       });
       console.log("create json 成功！");
@@ -297,11 +295,11 @@ const App: React.FC = () => {
       type RecordType = {
         [key: string]: string; // 表示键是字符串，值也是字符串
       };
-      let myArr: RecordType[] = [];
+
       let myArrData: Array<string> = []; //有语音的单词
       let myJson: any;
       let obj2: RecordType = {};
-      let obj: RecordType;
+
       const entries = Object.entries(allWordList);
       entries.map(([key, value]) => {
         if (data.includes(key)) {
@@ -324,7 +322,7 @@ const App: React.FC = () => {
   }
 
   const importData = () => {
-    clearStore(juniorDB);
+    clearStore(juniorDbRef.current);
     importJsonData(juniorList);
   };
   const importDataAll = () => {

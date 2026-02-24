@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import {
   Card,
   Row,
@@ -98,9 +98,13 @@ const BookSelect = () => {
     try {
       // 方法一：使用 iterate (推荐，效率高)
       // iterate 接收回调函数，遍历所有键值对
-      await Db.iterate((value: storedWord, key) => {
+      await Db.iterate((value: storedWord) => {
         // 将每一条数据构造成对象，推入数组
-
+        // console.log(value);
+        if (!value || !value["word"]) {
+          // console.log(key, Db.getItem(key), Db.getItem("OK"));
+          return;
+        }
         dataArray.push({
           group: 0,
           word: value["word"],
@@ -154,7 +158,7 @@ const BookSelect = () => {
 
   // 4. 计算学习天数
   //dailyCount change lead to BookSelect reload,totalDays will be update new value.
-  const totalWords = selectedBook?.totalWords || 0;
+  const totalWords = allData.length || 0;
   const totalDays = Math.ceil(totalWords / dailyCount);
 
   // 5. 确认计划
@@ -174,6 +178,7 @@ const BookSelect = () => {
       saveOneData(SchemeBriefDbRef.current, mySchemeBrief);
     } catch (err) {
       // pop windows , prompt try again
+      console.log("SchemeBrief", err);
     }
 
     // group words
@@ -264,7 +269,7 @@ const BookSelect = () => {
       if (hasInit === false) {
         // 路径直接以 / 开头，指向 public 目录
         axios
-          .get("/junior_data.json")
+          .get("junior_data.json")
           .then((response) => {
             console.log("333", response.data);
 

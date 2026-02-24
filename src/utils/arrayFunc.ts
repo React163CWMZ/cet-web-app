@@ -27,7 +27,7 @@ export async function getAllDataFromStore<T>(Db: LocalForage) {
   try {
     // 方法一：使用 iterate (推荐，效率高)
     // iterate 接收回调函数，遍历所有键值对
-    await Db.iterate((value: T, key) => {
+    await Db.iterate((value: T) => {
       // 将每一条数据构造成对象，推入数组
 
       dataArray.push(value);
