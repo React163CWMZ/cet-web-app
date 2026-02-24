@@ -10,11 +10,11 @@ import StudyDay from "./pages/StudyDay";
 
 // 路由配置
 export const router: RouteObject[] = [
-  { path: "/", element: <Home /> },
+  { path: "/list", element: <Home /> },
   { path: "/study", element: <App /> },
   { path: "/about", element: <About /> },
   { path: "/calendar", element: <StudyCalendar /> },
-  { path: "/book", element: <BookSelect /> },
+  { path: "/", element: <BookSelect /> },
   { path: "/daytask", element: <StudyDay /> },
 
   {

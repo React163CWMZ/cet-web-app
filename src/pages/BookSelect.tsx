@@ -25,6 +25,8 @@ import {
   clearStore,
 } from "../utils/useLocalforageDb";
 
+import { getReviewDates } from "../utils/studyCommon";
+
 const { Title } = Typography;
 
 // 单词级别类型
@@ -67,16 +69,6 @@ interface ReviewItem {
   studyId: string;
   title: string;
   reviewDate: string; // 格式：YYYY-MM-DD
-}
-
-// 艾宾浩斯复习天数（只按天）,first review is the same day of learn date
-const REVIEW_DAYS = [0, 1, 3, 6, 14, 21, 29];
-
-// 工具函数：计算复习日期
-function getReviewDates(learnDate: string): string[] {
-  return REVIEW_DAYS.map((day) =>
-    dayjs(learnDate).add(day, "day").format("YYYY-MM-DD"),
-  );
 }
 
 // 每日学习数量
@@ -214,7 +206,7 @@ const BookSelect = () => {
         reviewDate: date, // 这里使用 reviewDate 作为新字段名
       }));
     });
-
+    clearStore(reviewSchemeDbRef.current);
     saveListData<ReviewItem>(reviewSchemeDbRef.current, resultArr);
 
     message.success(
