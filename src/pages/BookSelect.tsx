@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import {
   Card,
@@ -16,9 +16,12 @@ import {
 import { BookOutlined } from "@ant-design/icons";
 import "./BookSelect.css";
 
-import useLocalforageDb from "../utils/useLocalforageDb";
+import useLocalforageDb, {
+  getOneDataByKey,
+  setOneDataByKey,
+} from "../utils/useLocalforageDb";
 
-import { arrayShuffle } from "../utils/arrayFunc";
+import { arrayShuffle, isArrayNonEmpty } from "../utils/arrayFunc";
 import {
   saveOneData,
   saveListData,
@@ -26,6 +29,8 @@ import {
 } from "../utils/useLocalforageDb";
 
 import { getReviewDates } from "../utils/studyCommon";
+
+import axios from "axios";
 
 const { Title } = Typography;
 
@@ -71,11 +76,16 @@ interface ReviewItem {
   reviewDate: string; // 格式：YYYY-MM-DD
 }
 
+interface projConfig {
+  hasInit: boolean;
+}
+
 // 每日学习数量
 type DailyCount = 20 | 30 | 40 | 50 | 60 | 70 | 80;
 
 const BookSelect = () => {
   // 新增：用ref存储数据库实例，避免重复初始化
+  const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
   const juniorDbRef = useRef(useLocalforageDb("MyDb", "juniorStore"));
   const juniorGroupDbRef = useRef(useLocalforageDb("MyDb", "juniorGroup"));
   const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "SchemeBrief"));
@@ -223,6 +233,52 @@ const BookSelect = () => {
       },
     });
   };
+
+  async function importJsonData(arr: storedWord[]) {
+    try {
+      if (isArrayNonEmpty(arr)) {
+        await Promise.all(
+          arr.map((value) => {
+            return juniorDbRef.current.setItem(value["word"], {
+              word: value["word"],
+              translations: value["translations"],
+            });
+          }),
+        );
+        console.log("导入成功！");
+      }
+    } catch (err) {
+      console.error("导入失败:", err);
+    }
+  }
+
+  useEffect(() => {
+    let hasInit: boolean = false;
+    getOneDataByKey(configDbRef.current, "junior-config").then((config) => {
+      if (config) {
+        console.log("11111", config);
+        hasInit = (config as projConfig)["hasInit"];
+      }
+
+      console.log("12222", hasInit);
+      if (hasInit === false) {
+        // 路径直接以 / 开头，指向 public 目录
+        axios
+          .get("/junior_data.json")
+          .then((response) => {
+            console.log("333", response.data);
+
+            setOneDataByKey(configDbRef.current, "junior-config", {
+              hasInit: true,
+            });
+            importJsonData(response.data);
+          })
+          .catch((error) => {
+            console.error("文件出错:", error);
+          });
+      }
+    });
+  }, []);
 
   return (
     <div className="word-select-container">

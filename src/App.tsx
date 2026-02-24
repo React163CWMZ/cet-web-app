@@ -7,8 +7,8 @@ import juniorList from "./assets/junior_data.ts";
 import seniorList from "./assets/senior_data.ts";
 import wordList from "./assets/data_json.ts";
 import allWordList from "./assets/data_all_word.ts";
-import useLocalforageDb, { clearStore } from "./utils/useLocalforageDb.tsx";
-import { getAllDataFromStore, isArrayNonEmpty } from "./utils/arrayFunc.tsx";
+import useLocalforageDb, { clearStore } from "./utils/useLocalforageDb.ts";
+import { getAllDataFromStore, isArrayNonEmpty } from "./utils/arrayFunc.ts";
 
 const { Title, Text } = Typography;
 

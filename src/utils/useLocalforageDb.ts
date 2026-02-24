@@ -12,10 +12,35 @@ const useLocalforageDb = (dbName: string, storeName: string) => {
   return myDb;
 };
 
+export async function getOneDataByKey<T>(Db: LocalForage, key: string) {
+  let result: T | null = null;
+  try {
+    result = await Db.getItem(key);
+
+    return result; // 数据拿到后再执行后续逻辑
+  } catch (err) {
+    console.error("读取失败", err);
+  }
+}
+
+export async function setOneDataByKey<T>(
+  Db: LocalForage,
+  key: string,
+  value: unknown,
+) {
+  let result: T | null = null;
+  try {
+    await Db.setItem(key, value);
+
+    return result; // 数据拿到后再执行后续逻辑
+  } catch (err) {
+    console.error("写入失败", err);
+  }
+}
+
 export async function getOneData<T>(Db: LocalForage) {
   let result: T | null = null;
   try {
-    // 这里的代码会“等待”遍历完成
     result = await Db.getItem("1");
 
     return result; // 数据拿到后再执行后续逻辑
