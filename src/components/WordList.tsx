@@ -1,11 +1,23 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Flex, Card, Spin, Typography, Space, Row, Col, Button } from "antd";
+import {
+  Flex,
+  Card,
+  Spin,
+  Typography,
+  Space,
+  Row,
+  Col,
+  Button,
+  Checkbox,
+} from "antd";
 import useLocalforageDb from "../utils/useLocalforageDb";
 import { arrayDiff } from "../utils/arrayFunc";
 const { Text } = Typography;
 
-import { Checkbox } from "antd";
 import type { CheckboxChangeEvent } from "antd";
+
+// 引入模块化样式
+import mystyles from "./WordList.module.css";
 
 // 引入内联样式（也可抽离为单独的 CSS 文件）
 const styles = {
@@ -74,6 +86,12 @@ interface TranslationsItem {
   type: string; // 对应 "n" (词性)
 }
 
+// word data with group
+interface groupWord {
+  group: number;
+  word: string;
+}
+
 // 2. 定义组件的 Props (如果需要的话)
 interface WordListProps {
   // 例如: initialPage?: number;
@@ -102,31 +120,55 @@ function connectTranslations(translations: TranslationsItem[]): string {
 //   }
 // }
 
-const WordList: React.FC<WordListProps> = () => {
+const WordListInfinite: React.FC<WordListProps> = () => {
   // 3. 为 state 添加类型：WordItem 数组
   const [data, setData] = useState<WordItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [hasMore, setHasMore] = useState<boolean>(true);
 
   // select need learn word
   const [learn, setLearn] = useState<string[]>([]);
 
   // judged word from dictionary. judged = learn + known
   // const [judged, setJudged] = useState<string[]>([]);
-  // add argument word:string
-  type MyCheckboxProps = (e: CheckboxChangeEvent, word: WordSelected) => void;
-  const onChange: MyCheckboxProps = (
-    e: CheckboxChangeEvent,
-    word: WordSelected,
-  ) => {
-    if (e.target.checked === true) {
-      // add to need learn
-      setLearn([...learn, word["word"]]);
-    } else {
+
+  //checkbox onChange event, add or delete word to need learn array
+
+  // 选中的ID集合
+  const [checkedIds, setCheckedIds] = useState<string[]>([]);
+
+  // 单个切换
+  const toggleItem = (word: string) => {
+    if (checkedIds.includes(word)) {
+      setCheckedIds(checkedIds.filter((i) => i !== word));
       // delete word
-      setLearn(learn.filter((item) => item !== word["word"]));
+      setLearn(learn.filter((item) => item !== word));
+    } else {
+      setCheckedIds([...checkedIds, word]);
+      // add to need learn
+      setLearn([...learn, word]);
     }
   };
+
+  // 1. 判断“全选”状态
+  // const checkAll = checkedIds.length === data.length;
+  // 2. 判断“半选”状态 (有数据选中，但不是全部)
+  const indeterminate =
+    checkedIds.length > 0 && checkedIds.length < data.length;
+
+  // 全选 / 取消全选
+  const toggleAll = (checked: boolean) => {
+    if (checked) {
+      setCheckedIds(data.map((item) => item.word));
+      setLearn(data.map((item) => item.word));
+    } else {
+      setCheckedIds([]);
+      setLearn([]);
+    }
+  };
+
+  // 是否全选
+  const isAllChecked = data.length > 0 && checkedIds.length === data.length;
+
   // save need learn word to database
   const saveLearn = () => {
     const judged_words = data.map((obj: WordItem) => obj.word);
@@ -134,19 +176,41 @@ const WordList: React.FC<WordListProps> = () => {
     console.log(learn, judged_words, known_words);
   };
 
-  // 使用 ref 存储页码，不需要泛型，number 类型即可
-  const page = useRef<number>(1);
   // 新增：异步请求锁 - 标记是否有请求正在处理中（比loading更及时）
   // 用 useRef 存储，不触发重渲染, speed more
   const requestLock = useRef<boolean>(false);
   // 新增：用ref存储数据库实例，避免重复初始化
   const juniorDbRef = useRef(useLocalforageDb("MyDb", "juniorStore"));
 
+  const juniorGroupDbRef = useRef(useLocalforageDb("MyDb", "juniorGroup"));
+
+  async function getGroupDataFromStore(Db: LocalForage) {
+    let dataArray: string[] = [];
+
+    try {
+      // 方法一：使用 iterate (推荐，效率高)
+      // iterate 接收回调函数，遍历所有键值对
+      await Db.iterate((value: groupWord) => {
+        // 将每一条数据构造成对象，推入数组
+
+        if (value["group"] === 1) {
+          dataArray.push(value["word"]);
+        }
+
+        // 注意：在 iterate 中不能使用 return 来中断（除非抛出异常），它是同步遍历
+      });
+
+      // console.log("获取到的数据数组:", dataArray);
+      return dataArray;
+    } catch (err) {
+      console.error("读取数据失败:", err);
+    }
+  }
+
   // 模拟数据获取 - 添加返回类型 Promise<void>
-  const fetchData = async (): Promise<void> => {
+  const fetchData = async (data: string[]): Promise<void> => {
     // 第一层拦截：请求锁 + loading + 无更多数据（三重防护）
-    console.log(page.current);
-    if (requestLock.current || loading || !hasMore) return;
+    if (requestLock.current || loading) return;
     // 加锁：在异步逻辑前就锁住，杜绝重复调用
     requestLock.current = true;
     setLoading(true);
@@ -157,34 +221,24 @@ const WordList: React.FC<WordListProps> = () => {
       // juniorDB.setItem("10000", "aaaaaa");
       let mockData: WordItem[] = [];
       let storedData: storedWord | null = null;
-      let id: number = 0;
       let word: WordItem | null = null;
       let someTemp: unknown; // make error of type vanish
 
-      for (let i = 1; i <= 20; i++) {
-        id = (page.current - 1) * 20 + i;
-        storedData = await juniorDB.getItem(id.toString());
-        // console.log(storedData);
+      for (let i = 0; i < data.length; i++) {
+        storedData = await juniorDB.getItem(data[i]);
+        // console.log("ddd", storedData);
         if (storedData) {
           someTemp = storedData["translations"];
           word = {
-            id: id,
+            id: i,
             word: storedData["word"] ? storedData["word"] : "",
             meaning: storedData["translations"]
               ? connectTranslations(someTemp as Array<TranslationsItem>)
               : "",
           };
+          // console.log("ddd", word);
           mockData.push(word);
         }
-      }
-      //end fetch,no more word
-      // last page , word number less than 20
-      if (!mockData) {
-        setHasMore(false);
-      } else if (mockData.length < 20) {
-        setHasMore(false);
-      } else {
-        page.current += 1;
       }
 
       // 4. 这里就是你要的 TS 写法，TypeScript 能自动推断出 prev 是 WordItem[]
@@ -204,18 +258,20 @@ const WordList: React.FC<WordListProps> = () => {
 
   // 初始化加载
   useEffect(() => {
-    fetchData();
-  }, []);
+    async function initFetch() {
+      let groupData = await getGroupDataFromStore(
+        juniorGroupDbRef.current,
+      ).then((res) => {
+        return res;
+      });
 
-  // 5. 为滚动事件添加类型 React.UIEvent<HTMLDivElement>
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>): void => {
-    const { scrollTop, scrollHeight, clientHeight } =
-      e.target as HTMLDivElement;
-    // console.log(scrollTop, clientHeight, scrollHeight);
-    if (scrollTop + clientHeight >= scrollHeight - 5 && !loading && hasMore) {
-      fetchData();
+      if (groupData) {
+        await fetchData(groupData);
+      }
     }
-  };
+
+    initFetch();
+  }, []);
 
   return (
     <Card
@@ -249,31 +305,54 @@ const WordList: React.FC<WordListProps> = () => {
           borderTop: 0,
           padding: "3px 8px",
           minHeight: "80vh",
-
+          backgroundColor: "#f8fafc", // 淡蓝色背景
           // boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.3)",
         },
       }}
     >
-      <div style={styles.scrollContainer} onScroll={handleScroll}>
+      <div
+        style={{
+          padding: "8px 0",
+          display: "flex",
+          justifyContent: "space-between",
+          width: "100%",
+        }}
+      >
+        <span style={{ color: "#f97316", fontSize: 14, margin: "0 auto" }}>
+          提示：选中熟知的单词，此单词就不会加入学习计划
+        </span>
+        {/* 全选框 */}
+        <Checkbox
+          indeterminate={indeterminate}
+          checked={isAllChecked}
+          onChange={(e) => toggleAll(e.target.checked)}
+          style={{ marginLeft: "auto" }}
+        >
+          全选
+        </Checkbox>
+      </div>
+
+      <div style={styles.scrollContainer}>
         <Flex
           vertical
           gap="small"
           style={{
             padding: "6px 0 0 6px",
-            backgroundColor: "#fff",
+            backgroundColor: "#f8fafc",
           }}
         >
-          {data.map((item, index) => (
+          {data.map((item) => (
             <Card
-              key={index}
+              key={item.word}
               size="small"
               style={{
                 backgroundColor: "#f6f6f6",
                 transition: "background 0.2s",
               }}
+              className={`${mystyles.card} ${checkedIds.includes(item.word) ? "cardChecked" : ""}`}
               // hover 样式
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#e8f3ff"; // hover 背景色
+                e.currentTarget.style.background = "#fff0f5"; // hover 背景色
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "#f6f6f6"; // 恢复默认背景
@@ -285,7 +364,7 @@ const WordList: React.FC<WordListProps> = () => {
                 style={{ width: "100%" }}
               >
                 <Col>
-                  <Text strong style={{ color: "#1d2129" }}>
+                  <Text strong style={{ color: "#1e293b" }}>
                     {item.word}
                   </Text>
                 </Col>
@@ -294,7 +373,7 @@ const WordList: React.FC<WordListProps> = () => {
                     type="secondary"
                     style={{
                       marginLeft: 8,
-                      color: "#4e5969",
+                      color: "#64748b",
                     }}
                   >
                     {item.meaning}
@@ -303,39 +382,19 @@ const WordList: React.FC<WordListProps> = () => {
                 <Col>
                   <Space align="end">
                     <Checkbox
-                      onChange={(e) =>
-                        onChange(e, { index: index, word: item.word })
-                      }
-                    ></Checkbox>
+                      checked={checkedIds.includes(item.word)}
+                      onChange={() => toggleItem(item.word)}
+                    />
                   </Space>
                 </Col>
               </Row>
             </Card>
           ))}
         </Flex>
-        <Spin
-          spinning={loading}
-          style={{ height: 40 }}
-          size="small"
-          tip="加载中..."
-        >
-          <Flex justify="center" align="center" style={{ padding: "16px 0" }}>
-            {loading ? (
-              <Space />
-            ) : !hasMore ? (
-              <Text type="secondary" style={{ height: 40, fontSize: 16 }}>
-                —— 无单词或已经到底啦 ——
-              </Text>
-            ) : (
-              <Text type="secondary" style={{ height: 40, fontSize: 16 }}>
-                下拉加载更多...
-              </Text>
-            )}
-          </Flex>
-        </Spin>
+        <Spin spinning={loading}></Spin>
       </div>
     </Card>
   );
 };
 
-export default WordList;
+export default WordListInfinite;

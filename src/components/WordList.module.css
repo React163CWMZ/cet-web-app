@@ -1,0 +1,11 @@
+/* 普通卡片 */
+.card {
+  transition: all 0.2s ease;
+}
+
+/* 选中后的卡片（全局穿透 antd） */
+:global(.ant-card.cardChecked),
+:global(.ant-card.cardChecked .ant-card-body) {
+  background-color: #fff0f5 !important;
+  border-color: #f97316 !important;
+}
