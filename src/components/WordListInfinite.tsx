@@ -102,7 +102,7 @@ function connectTranslations(translations: TranslationsItem[]): string {
 //   }
 // }
 
-const WordList: React.FC<WordListProps> = () => {
+const WordListInfinite: React.FC<WordListProps> = () => {
   // 3. 为 state 添加类型：WordItem 数组
   const [data, setData] = useState<WordItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -338,4 +338,4 @@ const WordList: React.FC<WordListProps> = () => {
   );
 };
 
-export default WordList;
+export default WordListInfinite;

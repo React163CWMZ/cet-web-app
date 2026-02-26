@@ -5,7 +5,10 @@ import localforage from "localforage";
 import juniorList from "./assets/junior_data.ts";
 import seniorList from "./assets/senior_data.ts";
 import allWordList from "./assets/data_all_word.ts";
-import useLocalforageDb, { clearStore } from "./utils/useLocalforageDb.ts";
+import useLocalforageDb, {
+  clearStore,
+  getOneDataByKey,
+} from "./utils/useLocalforageDb.ts";
 import { getAllDataFromStore, isArrayNonEmpty } from "./utils/arrayFunc.ts";
 
 const { Title } = Typography;
@@ -26,15 +29,17 @@ interface storedWord {
 interface groupWord {
   group: number;
   word: string;
+  isKnown: boolean;
   index?: number;
 }
 const App: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   //解构参数（加类型注解更规范）
-  const { group } = location.state || {};
+  // const { group } = location.state || {};
 
-  const currentGroup: number = group;
+  const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
+  const groupRef = useRef<number>(1);
 
   const [wordIndex, setWordIndex] = useState<number>(1); // 定义状态
   const [word, setWord] = useState<string>(); // 定义状态，默认值可以是空数组或 null
@@ -55,18 +60,19 @@ const App: React.FC = () => {
   const [isCountFinish, setIsCountFinish] = useState(false);
 
   // get group words which need to learn
-  const getGroupWords = () => {
-    getAllDataFromStore(juniorGroupDbRef.current).then((data) => {
+  const getGroupWords = async () => {
+    await getAllDataFromStore(juniorGroupDbRef.current).then((data) => {
+      // console.log("11groupData:", data, groupRef.current);
       if (data) {
-        data = (data as groupWord[]).filter(
-          (item) => item.group == currentGroup,
-        );
-
+        data = (data as groupWord[]).filter((item) => {
+          return item.group == groupRef.current && item.isKnown === false;
+        });
+        // console.log("221groupData:", data);
         data = (data as groupWord[]).map((item, idx) => ({
           ...item, // 展开原有的所有属性
           index: idx + 1, // 添加 index，从 1 开始
         }));
-        // console.log(data);
+        // console.log("444", data);
         setWordData(data as groupWord[]);
       }
     });
@@ -80,22 +86,22 @@ const App: React.FC = () => {
   const nextOnefromArray = async () => {
     try {
       setNextOneDisable(true);
-
+      console.log("111==", wordData, wordIndex);
       if (wordIndex > wordData.length) {
         throw new Error("已到达最后一个");
       }
-      let needWord = wordData.filter((item) => item.index === wordIndex);
+      let showWord = wordData.filter((item) => item.index === wordIndex);
 
-      if (!isArrayNonEmpty(needWord)) {
+      if (!isArrayNonEmpty(showWord)) {
         throw new Error("未找到单词");
       }
       // current word index, make pre or next
-      preWordRef.current = (needWord[0]["index"] as number) - 1;
-      setWordIndex((needWord[0]["index"] as number) + 1);
+      preWordRef.current = (showWord[0]["index"] as number) - 1;
+      setWordIndex((showWord[0]["index"] as number) + 1);
       const storedData: storedWord | null = await juniorDbRef.current.getItem(
-        needWord[0]["word"],
+        showWord[0]["word"],
       );
-      // console.log("333==", wordData, needWord, wordIndex, storedData);
+      // console.log("333==", wordData, showWord, wordIndex, storedData);
 
       let translations_arr: TranslationsItem[] = [];
       // 2. 判断数据是否存在
@@ -129,8 +135,9 @@ const App: React.FC = () => {
         console.log("not word found");
       }
     } catch (err) {
-      alert("读取失败：" + err);
-      if (err == "Error: 已到达最后一个") {
+      // todo congratulate user finish all words in group
+      alert(err instanceof Error ? err.message : "操作失败");
+      if (err instanceof Error && err.message.includes("已到达最后一个")) {
         navigate("/daytask");
       }
       setNextOneDisable(false);
@@ -142,21 +149,21 @@ const App: React.FC = () => {
       if (preWordRef.current < 1) {
         console.log(666);
         throw new Error("已到达第一个");
-        // needWord is empty
+        // showWord is empty
       }
-      let needWord = wordData.filter(
+      let showWord = wordData.filter(
         (item) => item.index === preWordRef.current,
       );
-      if (!isArrayNonEmpty(needWord)) {
+      if (!isArrayNonEmpty(showWord)) {
         throw new Error("未找到单词");
       }
       // current word index, make pre or next
-      preWordRef.current = (needWord[0]["index"] as number) - 1;
-      setWordIndex((needWord[0]["index"] as number) + 1);
+      preWordRef.current = (showWord[0]["index"] as number) - 1;
+      setWordIndex((showWord[0]["index"] as number) + 1);
       const storedData: storedWord | null = await juniorDbRef.current.getItem(
-        needWord[0]["word"],
+        showWord[0]["word"],
       );
-      console.log("000==", wordData, needWord, wordIndex, storedData);
+      console.log("000==", wordData, showWord, wordIndex, storedData);
 
       let translations_arr: TranslationsItem[] = [];
       // 2. 判断数据是否存在
@@ -332,8 +339,11 @@ const App: React.FC = () => {
     getData();
   };
   useEffect(() => {
-    // 执行读取
-    getGroupWords();
+    getOneDataByKey(configDbRef.current, "cur_group").then((group) => {
+      groupRef.current = group as number;
+      // get group, then get group words
+      getGroupWords();
+    });
 
     // 每秒减1
     const timer = setInterval(() => {

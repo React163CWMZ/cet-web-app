@@ -185,6 +185,7 @@ const BookSelect = () => {
     const result: groupWord[] = arrayShuffle(allData).map((item, index) => {
       return {
         ...item,
+        isKnown: false, // 新增字段，默认值为 false
         group: Math.floor(index / dailyCount) + 1, // 每dailyCount个一组
       };
     });

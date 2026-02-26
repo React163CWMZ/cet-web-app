@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Flex,
   Card,
@@ -9,12 +10,12 @@ import {
   Col,
   Button,
   Checkbox,
+  message,
+  Modal,
 } from "antd";
-import useLocalforageDb from "../utils/useLocalforageDb";
+import useLocalforageDb, { getOneDataByKey } from "../utils/useLocalforageDb";
 import { arrayDiff } from "../utils/arrayFunc";
 const { Text } = Typography;
-
-import type { CheckboxChangeEvent } from "antd";
 
 // 引入模块化样式
 import mystyles from "./WordList.module.css";
@@ -70,13 +71,6 @@ interface WordItem {
   meaning: string;
 }
 
-// checkbox, auxiliary judgement which word need study, which word was already learned ago.
-interface WordSelected {
-  index: number;
-  word: string;
-  meaning?: string;
-}
-
 interface storedWord {
   word: string;
   translations: string;
@@ -90,6 +84,7 @@ interface TranslationsItem {
 interface groupWord {
   group: number;
   word: string;
+  isKnown: boolean;
 }
 
 // 2. 定义组件的 Props (如果需要的话)
@@ -120,18 +115,35 @@ function connectTranslations(translations: TranslationsItem[]): string {
 //   }
 // }
 
-const WordListInfinite: React.FC<WordListProps> = () => {
-  // 3. 为 state 添加类型：WordItem 数组
+const WordList: React.FC<WordListProps> = () => {
+  const navigate = useNavigate();
+  const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const showModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleOk = () => {
+    saveLearn();
+    setIsModalOpen(false);
+    navigate("/study");
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+  };
+
+  // 为 state 添加类型：WordItem 数组
   const [data, setData] = useState<WordItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // select need learn word
-  const [learn, setLearn] = useState<string[]>([]);
+  // had known words
+  const known_words = useRef<string[]>([]);
 
-  // judged word from dictionary. judged = learn + known
-  // const [judged, setJudged] = useState<string[]>([]);
-
-  //checkbox onChange event, add or delete word to need learn array
+  // pop massage
+  const [messageApi, contextHolder] = message.useMessage();
 
   // 选中的ID集合
   const [checkedIds, setCheckedIds] = useState<string[]>([]);
@@ -141,28 +153,28 @@ const WordListInfinite: React.FC<WordListProps> = () => {
     if (checkedIds.includes(word)) {
       setCheckedIds(checkedIds.filter((i) => i !== word));
       // delete word
-      setLearn(learn.filter((item) => item !== word));
+      known_words.current = known_words.current.filter((item) => item !== word);
     } else {
       setCheckedIds([...checkedIds, word]);
       // add to need learn
-      setLearn([...learn, word]);
+      known_words.current.push(word);
     }
   };
 
-  // 1. 判断“全选”状态
-  // const checkAll = checkedIds.length === data.length;
-  // 2. 判断“半选”状态 (有数据选中，但不是全部)
+  // 1. 判断“半选”状态 (有数据选中，但不是全部)
   const indeterminate =
     checkedIds.length > 0 && checkedIds.length < data.length;
 
-  // 全选 / 取消全选
+  // 2. 全选 / 取消全选
   const toggleAll = (checked: boolean) => {
     if (checked) {
       setCheckedIds(data.map((item) => item.word));
-      setLearn(data.map((item) => item.word));
+      // 全选时，known_words 就是所有单词
+      known_words.current = data.map((item) => item.word);
     } else {
       setCheckedIds([]);
-      setLearn([]);
+      // 取消全选时，known_words 也清空
+      known_words.current = [];
     }
   };
 
@@ -170,37 +182,71 @@ const WordListInfinite: React.FC<WordListProps> = () => {
   const isAllChecked = data.length > 0 && checkedIds.length === data.length;
 
   // save need learn word to database
-  const saveLearn = () => {
+  const saveLearn = async () => {
     const judged_words = data.map((obj: WordItem) => obj.word);
-    const known_words = arrayDiff<string>(judged_words, learn);
-    console.log(learn, judged_words, known_words);
+    // the words need to learn = judged - known_words
+    const learn_words = arrayDiff<string>(judged_words, known_words.current);
+    console.log(learn_words, judged_words, known_words.current);
+
+    const Db = juniorGroupDbRef.current;
+
+    try {
+      if (learn_words.length < 3) {
+        throw new Error("一组学习的单词至少3个哦~");
+      }
+      let group = await getOneDataByKey(configDbRef.current, "cur_group");
+
+      // iterate 接收回调函数，遍历所有键值对
+      await Db.iterate((value: groupWord, key) => {
+        // 将每一条数据构造成对象，推入数组
+
+        if (value["group"] === group && learn_words.includes(value["word"])) {
+          value = { ...value, isKnown: false };
+          Db.setItem(key, value);
+        }
+
+        if (
+          value["group"] === group &&
+          known_words.current.includes(value["word"])
+        ) {
+          value = { ...value, isKnown: true };
+          Db.setItem(key, value);
+        }
+
+        // 注意：在 iterate 中不能使用 return 来中断（除非抛出异常），它是同步遍历
+      });
+    } catch (err) {
+      console.error("更新数据失败:", err);
+      messageApi.info(err instanceof Error ? err.message : "操作失败");
+    }
   };
 
   // 新增：异步请求锁 - 标记是否有请求正在处理中（比loading更及时）
   // 用 useRef 存储，不触发重渲染, speed more
   const requestLock = useRef<boolean>(false);
   // 新增：用ref存储数据库实例，避免重复初始化
+
   const juniorDbRef = useRef(useLocalforageDb("MyDb", "juniorStore"));
 
   const juniorGroupDbRef = useRef(useLocalforageDb("MyDb", "juniorGroup"));
 
   async function getGroupDataFromStore(Db: LocalForage) {
-    let dataArray: string[] = [];
+    let dataArray: groupWord[] = [];
 
     try {
-      // 方法一：使用 iterate (推荐，效率高)
+      let group = await getOneDataByKey(configDbRef.current, "cur_group");
       // iterate 接收回调函数，遍历所有键值对
       await Db.iterate((value: groupWord) => {
         // 将每一条数据构造成对象，推入数组
 
-        if (value["group"] === 1) {
-          dataArray.push(value["word"]);
+        if (value["group"] === group) {
+          dataArray.push(value);
         }
 
         // 注意：在 iterate 中不能使用 return 来中断（除非抛出异常），它是同步遍历
       });
 
-      // console.log("获取到的数据数组:", dataArray);
+      // console.log(group, "获取到的数据数组:", dataArray);
       return dataArray;
     } catch (err) {
       console.error("读取数据失败:", err);
@@ -215,10 +261,9 @@ const WordListInfinite: React.FC<WordListProps> = () => {
     requestLock.current = true;
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       const juniorDB = juniorDbRef.current;
-      // juniorDB.setItem("10000", "aaaaaa");
       let mockData: WordItem[] = [];
       let storedData: storedWord | null = null;
       let word: WordItem | null = null;
@@ -242,7 +287,7 @@ const WordListInfinite: React.FC<WordListProps> = () => {
       }
 
       // 4. 这里就是你要的 TS 写法，TypeScript 能自动推断出 prev 是 WordItem[]
-      setData((prev) => [...prev, ...mockData]);
+      setData(mockData);
     } catch (err) {
       // // according to this exception, next page or end fetch
       // if (err instanceof WordEndException) {
@@ -264,9 +309,20 @@ const WordListInfinite: React.FC<WordListProps> = () => {
       ).then((res) => {
         return res;
       });
-
+      // console.log("groupData:", groupData);
       if (groupData) {
-        await fetchData(groupData);
+        let known_words_temp: string[] = [];
+        let group_words_temp: string[] = [];
+        groupData.forEach((item) => {
+          if (item["isKnown"] === true) {
+            known_words_temp.push(item["word"]);
+          }
+          group_words_temp.push(item["word"]);
+        });
+
+        known_words.current = known_words_temp;
+        setCheckedIds(known_words.current); // 初始化时select（即已知的单词）
+        await fetchData(group_words_temp);
       }
     }
 
@@ -286,9 +342,18 @@ const WordListInfinite: React.FC<WordListProps> = () => {
             }}
           >
             <span>单词列表</span>
-            <Button type="dashed" onClick={saveLearn} size="small">
-              操作
+            <Button type="dashed" onClick={showModal} size="small">
+              完成
             </Button>
+            <Modal
+              title="保存"
+              closable={{ "aria-label": "Custom Close Button" }}
+              open={isModalOpen}
+              onOk={handleOk}
+              onCancel={handleCancel}
+            >
+              <p>确定保存吗</p>
+            </Modal>
           </div>
         </>
       }
@@ -319,8 +384,9 @@ const WordListInfinite: React.FC<WordListProps> = () => {
         }}
       >
         <span style={{ color: "#f97316", fontSize: 14, margin: "0 auto" }}>
-          提示：选中熟知的单词，此单词就不会加入学习计划
+          提示：选中已经熟知的单词，这些单词就不会加入学习计划。
         </span>
+        {contextHolder}
         {/* 全选框 */}
         <Checkbox
           indeterminate={indeterminate}
@@ -397,4 +463,4 @@ const WordListInfinite: React.FC<WordListProps> = () => {
   );
 };
 
-export default WordListInfinite;
+export default WordList;

@@ -1,7 +1,10 @@
-import React from "react";
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Badge, Typography, Space, Button } from "antd";
 // import type { StudyItem } from "./types"; // 如果抽离了类型，就导入
+import useLocalforageDb, {
+  setOneDataByKey,
+} from "../utils/useLocalforageDb.ts";
 const { Text } = Typography;
 
 // 类型定义
@@ -26,6 +29,12 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
   reviewTasks,
 }) => {
   const navigate = useNavigate();
+  const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
+  const handleStartStudy = async (group: string) => {
+    await setOneDataByKey(configDbRef.current, "cur_group", parseInt(group));
+    navigate("/study");
+  };
+
   return (
     <Card title={`📌 ${selectedDay} 任务`} style={{ width: "100%" }}>
       <h4>📖 新学</h4>
@@ -43,9 +52,7 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
                   <Button
                     type="link"
                     color="pink"
-                    onClick={() =>
-                      navigate("/study", { state: { group: item.id } })
-                    }
+                    onClick={() => handleStartStudy(item.id)}
                   >
                     开始学习
                   </Button>
