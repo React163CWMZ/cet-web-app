@@ -1,14 +1,8 @@
-import { Card, Space, Button, Flex, Typography } from "antd"; // 1. 导入 Card 组件
+import { Card, Button, Flex, Typography, Modal, message, Divider } from "antd"; // 1. 导入 Card 组件
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import localforage from "localforage";
-import juniorList from "./assets/junior_data.ts";
-import seniorList from "./assets/senior_data.ts";
-import allWordList from "./assets/data_all_word.ts";
-import useLocalforageDb, {
-  clearStore,
-  getOneDataByKey,
-} from "./utils/useLocalforageDb.ts";
+import { useNavigate } from "react-router-dom";
+
+import useLocalforageDb, { getOneDataByKey } from "./utils/useLocalforageDb.ts";
 import { getAllDataFromStore, isArrayNonEmpty } from "./utils/arrayFunc.ts";
 
 const { Title } = Typography;
@@ -34,9 +28,41 @@ interface groupWord {
 }
 const App: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  // const location = useLocation();
   //解构参数（加类型注解更规范）
   // const { group } = location.state || {};
+
+  // pop massage
+  const [messageApi, contextHolder] = message.useMessage();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // const showModal = () => {
+  //   setIsModalOpen(true);
+  // };
+
+  const handleOk = () => {
+    setIsModalOpen(false);
+    navigate("/daytask");
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+  };
+
+  const [isFilterWordModalOpen, setIsFilterWordModalOpen] = useState(false);
+
+  const showFilterWordModal = () => {
+    setIsFilterWordModalOpen(true);
+  };
+  const filterWordHandleOk = () => {
+    setIsFilterWordModalOpen(false);
+    navigate("/list");
+  };
+
+  const filterWordhandleCancel = () => {
+    setIsFilterWordModalOpen(false);
+  };
 
   const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
   const groupRef = useRef<number>(1);
@@ -86,7 +112,7 @@ const App: React.FC = () => {
   const nextOnefromArray = async () => {
     try {
       setNextOneDisable(true);
-      console.log("111==", wordData, wordIndex);
+      // console.log("111==", wordData, wordIndex);
       if (wordIndex > wordData.length) {
         throw new Error("已到达最后一个");
       }
@@ -106,7 +132,6 @@ const App: React.FC = () => {
       let translations_arr: TranslationsItem[] = [];
       // 2. 判断数据是否存在
       if (storedData) {
-        // console.log("X:", typeof storedData["translations"]);
         // 如果存在，更新到 state (localforage 会自动反序列化对象/数组)
         setWord(storedData["word"]);
 
@@ -136,9 +161,9 @@ const App: React.FC = () => {
       }
     } catch (err) {
       // todo congratulate user finish all words in group
-      alert(err instanceof Error ? err.message : "操作失败");
+
       if (err instanceof Error && err.message.includes("已到达最后一个")) {
-        navigate("/daytask");
+        setIsModalOpen(true);
       }
       setNextOneDisable(false);
     }
@@ -147,7 +172,7 @@ const App: React.FC = () => {
     try {
       setPreOneDisable(true);
       if (preWordRef.current < 1) {
-        console.log(666);
+        // console.log(666);
         throw new Error("已到达第一个");
         // showWord is empty
       }
@@ -163,12 +188,12 @@ const App: React.FC = () => {
       const storedData: storedWord | null = await juniorDbRef.current.getItem(
         showWord[0]["word"],
       );
-      console.log("000==", wordData, showWord, wordIndex, storedData);
+      // console.log("000==", wordData, showWord, wordIndex, storedData);
 
       let translations_arr: TranslationsItem[] = [];
       // 2. 判断数据是否存在
       if (storedData) {
-        console.log("X:", typeof storedData["translations"]);
+        // console.log("X:", typeof storedData["translations"]);
         // 如果存在，更新到 state (localforage 会自动反序列化对象/数组)
         setWord(storedData["word"]);
 
@@ -197,147 +222,17 @@ const App: React.FC = () => {
         console.log("not word found");
       }
     } catch (err) {
-      alert("读取失败：" + err);
+      messageApi.info(err instanceof Error ? err.message : "操作失败");
+
       setPreOneDisable(false);
     }
   };
-  // // 单词数据库：MyDb
-  // const juniorDB: LocalForage = localforage.createInstance({
-  //   name: "MyDb", //数据库名
-  //   storeName: "juniorStore", // 类似于表名
-  // });
-  // // 单词数据库：MySenior
-  // const allWordDB = localforage.createInstance({
-  //   name: "AllWORD", //数据库名
-  //   storeName: "wordStore", // 类似于表名
-  // });
-  // // 中文释义
-  // function connectTranslations(translations: TranslationsItem[]): string {
-  //   let str: string = "";
-  //   for (const value of translations) {
-  //     console.log(value.translation, value.type);
-  //     str += value.translation + " " + value.type;
-  //   }
-  //   return str;
-  // }
-
-  async function importJsonData(List: JsonObject) {
-    try {
-      console.log("import data");
-
-      const entries = Object.entries(List);
-      await Promise.all(
-        entries.map(([_, value]) => {
-          return juniorDbRef.current.setItem(value["word"], {
-            word: value["word"],
-            translations: value["translations"],
-          });
-        }),
-      );
-      console.log("导入成功！");
-    } catch (err) {
-      console.error("导入失败:", err);
-    }
-  }
-
-  async function importJsonDataAll() {
-    try {
-      console.log("import all data");
-
-      const entries = Object.entries(allWordList);
-      console.log(entries);
-      // await Promise.all(
-      //   entries.map(([key, value]) => {
-      //     return allWordDB.setItem(key, value);
-      //   }),
-      // );
-      console.log("导入成功！");
-    } catch (err) {
-      console.error("导入失败:", err);
-    }
-  }
-
-  async function getData() {
-    try {
-      const storedData: storedWord | null = await juniorDbRef.current.getItem(
-        wordIndex.toString(),
-      );
-
-      // 2. 判断数据是否存在
-      if (storedData) {
-        // 如果存在，更新到 state (localforage 会自动反序列化对象/数组)
-        setWord(storedData["word"]);
-      } else {
-        // 如果没有数据，可以设置默认值或者保持为空
-        setWord("");
-      }
-    } catch (err) {
-      alert("读取失败：" + err);
-    }
-  }
-
-  // 生成单词json，用于刷新需要下载音频的单词
-  function createJson() {
-    try {
-      const entries = Object.entries(seniorList);
-      let myArr: Array<string> = [];
-      let myJson: any;
-      entries.map(([_, value]) => {
-        myArr.push(value["word"]);
-      });
-      console.log("create json 成功！");
-      console.log(myArr);
-      myJson = JSON.stringify(myArr);
-      console.log(myJson);
-
-      getNeedWord(myArr);
-    } catch (err) {
-      console.error("create json 失败:", err);
-    }
-  }
-
-  // attain necessary word voice url
-  function getNeedWord(data: Array<string>) {
-    try {
-      type RecordType = {
-        [key: string]: string; // 表示键是字符串，值也是字符串
-      };
-
-      let myArrData: Array<string> = []; //有语音的单词
-      let myJson: any;
-      let obj2: RecordType = {};
-
-      const entries = Object.entries(allWordList);
-      entries.map(([key, value]) => {
-        if (data.includes(key)) {
-          obj2[key] = value;
-          // obj = { [key]: value };
-          // myArr.push(obj);
-          myArrData.push(key);
-        }
-      });
-      console.log(arrayDifference(data, myArrData));
-      myJson = JSON.stringify(obj2);
-      console.log("获取需要的单词:", myJson);
-    } catch (err) {
-      console.error("获取需要的单词 失败:", err);
-    }
-  }
-  // filter word which arr1 has  ，but arr2 not has 。
-  function arrayDifference<T>(arr1: T[], arr2: T[]): T[] {
-    return arr1.filter((x) => !arr2.includes(x));
-  }
-
-  const importData = () => {
-    clearStore(juniorDbRef.current);
-    importJsonData(juniorList);
+  // goto list page
+  const handleFilter = () => {
+    // todo filter known or unknown words
+    navigate("/list");
   };
-  const importDataAll = () => {
-    importJsonDataAll();
-  };
-  const getWord = () => {
-    getData();
-  };
+
   useEffect(() => {
     getOneDataByKey(configDbRef.current, "cur_group").then((group) => {
       groupRef.current = group as number;
@@ -360,62 +255,6 @@ const App: React.FC = () => {
     // 清理定时器
     return () => clearInterval(timer);
   }, [count]); // 空依赖数组，确保只在组件挂载时执行一次
-
-  // --- 1. 定义存储函数 ---
-  const saveAudioToDB = async () => {
-    try {
-      let audioBlob: Blob;
-      // 1. 获取音频文件 (假设 1.mp3 在 public 目录下，可通过根路径访问)
-      await fetch("/a.mp3") // 如果在 src 同级目录或 public 下
-        .then((response) => response.blob())
-        .then((blob) => {
-          console.log(blob instanceof Blob, blob);
-          audioBlob = blob;
-          localforage.setItem("a_mp3", audioBlob);
-        });
-
-      // console.log(audioBlob);
-      // 3. 存入 LocalForage
-      // 第一个参数是键名（你自己定义），第二个参数是刚才获取的 Blob 数据
-      // await localforage.setItem("a_mp3", audioBlob);
-
-      console.log("🎉 1.mp3 已成功存入数据库");
-    } catch (error) {
-      console.error("💾 存储失败:", error);
-    }
-  };
-
-  // --- 2. 定义读取并播放函数 ---
-  const playAudioFromDB = async () => {
-    try {
-      // 1. 从数据库取出数据
-      const blob: Blob | null = await localforage.getItem("a_mp3");
-
-      if (!blob) {
-        alert("数据库中没有找到该文件");
-        return;
-      }
-
-      // 2. 创建临时 URL 供 Audio 标签使用
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-
-      // 3. 播放 (注意：浏览器要求播放必须由用户点击触发)
-      audio.play().catch((err) => {
-        console.error("播放被阻止:", err);
-        alert("请先点击页面任意位置，再尝试播放");
-      });
-
-      // 可选：播放结束后释放内存 (这里简化处理，实际可能需要监听 ended 事件)
-      // audio.onended = () => URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("播放失败:", err);
-    }
-
-    setTimeout(() => {
-      // speechSynthesis.speak(new SpeechSynthesisUtterance("the time is over"));
-    }, 500);
-  };
 
   // —————— 倒计时页面 ——————
   if (!isCountFinish) {
@@ -441,31 +280,59 @@ const App: React.FC = () => {
     <>
       <div
         style={{
-          height: "100vh",
+          height: "90vh",
           padding: 16,
           overflow: "hidden",
           boxSizing: "border-box",
         }}
       >
+        {contextHolder}
+        <Modal
+          title="恭喜完成"
+          okText="确定"
+          cancelText="取消"
+          closable={{ "aria-label": "Custom Close Button" }}
+          open={isModalOpen}
+          onOk={handleOk}
+          onCancel={handleCancel}
+        >
+          <Divider />
+          <p>继续下一个小组学习</p>
+        </Modal>
+        <Modal
+          title="筛选简单的单词"
+          okText="确定"
+          cancelText="取消"
+          closable={{ "aria-label": "Custom Close Button" }}
+          open={isFilterWordModalOpen}
+          onOk={filterWordHandleOk}
+          onCancel={filterWordhandleCancel}
+          styles={{
+            header: {},
+            body: {},
+          }}
+        >
+          <Divider />
+          <p>比如in、of、book、for、with等熟悉的单词</p>
+          <p>对于别人难，但是你已经掌握的单词</p>
+          <p>选中这些单词就不会出现，建议首次学习筛选</p>
+        </Modal>
         <Card
           title="初中单词"
+          extra={
+            <>
+              <Button onClick={showFilterWordModal}>筛选</Button>
+            </>
+          }
           actions={[
             // 通常放按钮或带点击事件的元素
             <Button
               type="primary"
-              key="unknownWord"
+              key="pre"
               onClick={preOne}
               disabled={preOneDisable}
             >
               上一个
-            </Button>,
-            <Button
-              type="primary"
-              key="showTranslations"
-
-              // style={{ backgroundColor: "#ffe8cc" }}
-            >
-              开始学习
             </Button>,
             <Button
               type="primary"
@@ -482,7 +349,6 @@ const App: React.FC = () => {
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-
             borderColor: "#4096FF",
             backgroundColor: "#E6F4FF",
           }}
@@ -514,28 +380,6 @@ const App: React.FC = () => {
           ))}
         </Card>
       </div>
-
-      <Space>
-        <Flex gap="small" wrap>
-          {/* 点击按钮存入 MP3 */}
-          <button onClick={saveAudioToDB}>存储 1.mp3 到数据库</button>
-
-          {/* 点击按钮播放 MP3 */}
-          <button onClick={playAudioFromDB}>播放数据库中的 1.mp3</button>
-        </Flex>
-      </Space>
-      <Space vertical size={16}>
-        <Button onClick={importData}>导入数据</Button>
-        <Button onClick={getWord}>得到数据</Button>
-        <Button
-          onClick={() => {
-            createJson();
-          }}
-        >
-          create json
-        </Button>
-        <Button onClick={importDataAll}>导入All数据</Button>
-      </Space>
     </>
   );
 };

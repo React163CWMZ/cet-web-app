@@ -10,7 +10,7 @@ import {
   Col,
   Button,
   Checkbox,
-  message,
+  // message,
   Modal,
 } from "antd";
 import useLocalforageDb, { getOneDataByKey } from "../utils/useLocalforageDb";
@@ -121,8 +121,25 @@ const WordList: React.FC<WordListProps> = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // 控制按钮禁用状态的变量
+  const [isOkButtonDisabled, setIsOkButtonDisabled] = useState(true);
+  // Modal提示信息文本
+  const [infoText, setInfoText] = useState("继续保存吗");
+
   const showModal = () => {
     setIsModalOpen(true);
+    let learn_words = arrayDiff<string>(
+      data.map((obj: WordItem) => obj.word),
+      known_words.current,
+    );
+
+    if (learn_words.length < 3) {
+      // messageApi.error("学习单词数量不足3个，至少3个单词在学习计划");
+      setInfoText("学习单词数量不足3个，至少3个单词在学习计划哟~");
+      setIsOkButtonDisabled(true);
+    } else {
+      setIsOkButtonDisabled(false);
+    }
   };
 
   const handleOk = () => {
@@ -143,7 +160,7 @@ const WordList: React.FC<WordListProps> = () => {
   const known_words = useRef<string[]>([]);
 
   // pop massage
-  const [messageApi, contextHolder] = message.useMessage();
+  // const [messageApi, contextHolder] = message.useMessage();
 
   // 选中的ID集合
   const [checkedIds, setCheckedIds] = useState<string[]>([]);
@@ -217,7 +234,6 @@ const WordList: React.FC<WordListProps> = () => {
       });
     } catch (err) {
       console.error("更新数据失败:", err);
-      messageApi.info(err instanceof Error ? err.message : "操作失败");
     }
   };
 
@@ -341,7 +357,7 @@ const WordList: React.FC<WordListProps> = () => {
               width: "100%",
             }}
           >
-            <span>单词列表</span>
+            <span>本次单词列表</span>
             <Button type="dashed" onClick={showModal} size="small">
               完成
             </Button>
@@ -351,8 +367,10 @@ const WordList: React.FC<WordListProps> = () => {
               open={isModalOpen}
               onOk={handleOk}
               onCancel={handleCancel}
+              // 👇 核心：通过 okButtonProps 动态控制按钮状态
+              okButtonProps={{ disabled: isOkButtonDisabled }}
             >
-              <p>确定保存吗</p>
+              <p>{infoText}</p>
             </Modal>
           </div>
         </>
@@ -384,9 +402,9 @@ const WordList: React.FC<WordListProps> = () => {
         }}
       >
         <span style={{ color: "#f97316", fontSize: 14, margin: "0 auto" }}>
-          提示：选中已经熟知的单词，这些单词就不会加入学习计划。
+          提示：选中已经熟知的单词，这些单词就不会加入学习计划。节约时间，专注学习新单词！
         </span>
-        {contextHolder}
+        {/* {contextHolder} */}
         {/* 全选框 */}
         <Checkbox
           indeterminate={indeterminate}

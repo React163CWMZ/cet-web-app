@@ -82,9 +82,7 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
                   <Button
                     type="link"
                     color="pink"
-                    onClick={() =>
-                      navigate("/study", { state: { group: item.id } })
-                    }
+                    onClick={() => handleStartStudy(item.id)}
                   >
                     开始复习
                   </Button>
