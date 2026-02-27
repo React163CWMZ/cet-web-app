@@ -3,6 +3,8 @@ import dayjs from "dayjs";
 import StudyTaskCard from "../components/StudyTaskCard";
 import useLocalforageDb, { getOneData } from "../utils/useLocalforageDb";
 import { getReviewDates } from "../utils/studyCommon";
+import { Space } from "antd";
+import { Link, useLocation } from "react-router-dom";
 
 // study scheme 类型定义
 interface StudyItem {
@@ -20,10 +22,9 @@ interface SchemeBrief {
 
 const StudyDay = () => {
   // const navigate = useNavigate();
-  console.log("123");
 
   // 引入 useLocation 钩子接收参数
-  // const location = useLocation();
+  const location = useLocation();
   //解构参数（加类型注解更规范）
   // const { wordBook, dailyCount, totalDays, startDay } = location.state || {};
   // const name: string = wordBook?.title;
@@ -112,17 +113,44 @@ const StudyDay = () => {
 
   // 页面布局
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", padding: 20 }}>
-      <h2>
-        📅 学习计划:
-        <span>{mySchemeBriefRef.current?.book}</span>
+    <div
+      style={{
+        maxWidth: "100%",
+        margin: "0 auto",
+        padding: 20,
+        backgroundColor: "#fafafa",
+      }}
+    >
+      <Space
+        orientation="horizontal"
+        size="large"
+        style={{
+          display: "flex",
+          marginBottom: 20,
+          justifyContent: "space-between",
+          fontSize: "18px",
+          fontWeight: 500,
+        }}
+      >
+        {location.pathname === "/daytask" ? (
+          <span style={{ color: "#1e293b" }}>学习日程</span>
+        ) : (
+          <Link to="/daytask">学习日程</Link>
+        )}
+
+        <Link to="/setting">关于设置</Link>
+      </Space>
+      <Space
+        orientation="horizontal"
+        size="large"
+        style={{ display: "flex", marginBottom: 20, color: "#334155" }}
+      >
+        <span>📅 学习计划：{mySchemeBriefRef.current?.book}</span>
         <span>开始日期：{mySchemeBriefRef.current?.startDay}</span>
         <span>预计天数：{mySchemeBriefRef.current?.groupNums} 天</span>
-      </h2>
+      </Space>
 
       <div style={{ display: "flex", gap: 20 }}>
-        {/* 左侧日历 */}
-
         {/* 右侧任务卡片（子组件） */}
         <div style={{ flex: 1 }}>
           <StudyTaskCard

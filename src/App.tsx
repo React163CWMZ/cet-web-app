@@ -355,8 +355,8 @@ const App: React.FC = () => {
           // ✅ 新版 antd 推荐：用 styles 代替 bodyStyle
           styles={{
             header: {
-              background: "#1677ff", // 顶部蓝色
-              color: "#fff",
+              background: "#4096FF", // 顶部蓝色
+              color: "#fafafa",
               fontSize: "16px",
               fontWeight: 500,
             },

@@ -36,7 +36,18 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
   };
 
   return (
-    <Card title={`📌 ${selectedDay} 任务`} style={{ width: "100%" }}>
+    <Card
+      title={`📌 ${selectedDay} 任务`}
+      style={{ width: "100%" }}
+      styles={{
+        header: {
+          background: "#4096FF", // 顶部蓝色
+          color: "#fafafa",
+          fontSize: "16px",
+          fontWeight: 500,
+        },
+      }}
+    >
       <h4>📖 新学</h4>
       {learnTasks.length > 0 ? (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
@@ -45,9 +56,19 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
               key={index}
               style={{ padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}
             >
-              <Space>
-                <Badge color="blue" />
-                {item.title}
+              <Space
+                orientation="horizontal"
+                size="large"
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Space>
+                  <Badge color="blue" />
+                  {item.title}
+                </Space>
+
                 {isActive && (
                   <Button
                     type="link"
@@ -75,9 +96,18 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
               key={index}
               style={{ padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}
             >
-              <Space>
-                <Badge color="orange" />
-                {item.title}
+              <Space
+                orientation="horizontal"
+                size="large"
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Space>
+                  <Badge color="orange" />
+                  {item.title}
+                </Space>
                 {isActive && (
                   <Button
                     type="link"

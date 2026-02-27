@@ -1,7 +1,7 @@
 import { Space } from "antd";
 import { Link, useLocation } from "react-router-dom";
 
-const About = () => {
+const Setting = () => {
   // const navigate = useNavigate();
   const location = useLocation();
 
@@ -21,10 +21,10 @@ const About = () => {
         ) : (
           <Link to="/daytask">学习日程</Link>
         )}
-        {location.pathname === "/about" ? (
+        {location.pathname === "/setting" ? (
           <span>关于设置</span>
         ) : (
-          <Link to="/about">关于设置</Link>
+          <Link to="/setting">关于设置</Link>
         )}
       </Space>
 
@@ -33,4 +33,4 @@ const About = () => {
   );
 };
 
-export default About;
+export default Setting;

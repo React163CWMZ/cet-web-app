@@ -7,6 +7,7 @@ import NotFound from "./pages/NotFound";
 import StudyCalendar from "./pages/StudyCalendar";
 import BookSelect from "./pages/BookSelect";
 import StudyDay from "./pages/StudyDay";
+import Setting from "./pages/Setting";
 
 // 路由配置
 export const router: RouteObject[] = [
@@ -16,6 +17,7 @@ export const router: RouteObject[] = [
   { path: "/calendar", element: <StudyCalendar /> },
   { path: "/", element: <BookSelect /> },
   { path: "/daytask", element: <StudyDay /> },
+  { path: "/setting", element: <Setting /> },
 
   {
     path: "*", // 404 兜底路由
