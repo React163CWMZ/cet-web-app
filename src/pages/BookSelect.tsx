@@ -11,6 +11,7 @@ import {
   Radio,
   Button,
   message,
+  List,
 } from "antd";
 
 import { BookOutlined } from "@ant-design/icons";
@@ -30,7 +31,7 @@ import {
 
 import { getReviewDates } from "../utils/studyCommon";
 
-import axios from "axios";
+import axios, { all } from "axios";
 
 const { Title } = Typography;
 
@@ -53,6 +54,8 @@ interface groupWord {
 interface storedWord {
   word: string;
   translations: string;
+  uk: string;
+  sentences: string;
 }
 
 interface SchemeBrief {
@@ -162,7 +165,7 @@ const BookSelect = () => {
   const totalDays = Math.ceil(totalWords / dailyCount);
 
   // 5. 确认计划
-  const handleConfirmPlan = () => {
+  const handleConfirmPlan = async () => {
     setPlanModalVisible(false);
 
     let mySchemeBrief: SchemeBrief = {
@@ -174,8 +177,8 @@ const BookSelect = () => {
 
     try {
       // clear data, then save new
-      clearStore(SchemeBriefDbRef.current);
-      saveOneData(SchemeBriefDbRef.current, mySchemeBrief);
+      await clearStore(SchemeBriefDbRef.current);
+      await saveOneData(SchemeBriefDbRef.current, mySchemeBrief);
     } catch (err) {
       // pop windows , prompt try again
       console.log("SchemeBrief", err);
@@ -190,8 +193,8 @@ const BookSelect = () => {
       };
     });
 
-    clearStore(juniorGroupDbRef.current);
-    saveListData<groupWord>(juniorGroupDbRef.current, result);
+    await clearStore(juniorGroupDbRef.current);
+    await saveListData<groupWord>(juniorGroupDbRef.current, result);
 
     // 每天学习数据的构造
 
@@ -205,7 +208,7 @@ const BookSelect = () => {
       learnDate: dayjs().add(index, "day").format("YYYY-MM-DD"),
     }));
 
-    clearStore(userSchemeDbRef.current);
+    await clearStore(userSchemeDbRef.current);
     // save scheme to db, review scheme gene by getReviewDates()
     saveListData<StudyItem>(userSchemeDbRef.current, schemeArr);
 
@@ -222,15 +225,15 @@ const BookSelect = () => {
         reviewDate: date, // 这里使用 reviewDate 作为新字段名
       }));
     });
-    clearStore(reviewSchemeDbRef.current);
-    saveListData<ReviewItem>(reviewSchemeDbRef.current, resultArr);
+    await clearStore(reviewSchemeDbRef.current);
+    await saveListData<ReviewItem>(reviewSchemeDbRef.current, resultArr);
 
     message.success(
       `已选择：${selectedBook?.title}，每天 ${dailyCount} 个，共 ${totalDays} 天`,
     );
 
-    // 这里可以跳转到背单词页面
-    navigate("/calendar", {
+    // 这里可以跳转到单词任务页面
+    navigate("/daytask", {
       state: {
         wordBook: selectedBook,
         dailyCount,
@@ -248,6 +251,8 @@ const BookSelect = () => {
             return juniorDbRef.current.setItem(value["word"], {
               word: value["word"],
               translations: value["translations"],
+              uk: value["uk"],
+              sentences: value["sentences"],
             });
           }),
         );
@@ -262,26 +267,40 @@ const BookSelect = () => {
     let hasInit: boolean = false;
     getOneDataByKey(configDbRef.current, "junior-config").then((config) => {
       if (config) {
-        console.log("11111", config);
+        // console.log("11111", config);
         hasInit = (config as projConfig)["hasInit"];
       }
 
-      console.log("12222", hasInit);
+      // console.log("12222", hasInit);
       if (hasInit === false) {
         // 路径直接以 / 开头，指向 public 目录
-        axios
-          .get("junior_data.json")
-          .then((response) => {
-            console.log("333", response.data);
+        try {
+          axios
+            .get("junior_data.json")
+            .then((response) => {
+              console.log("333", response.data);
 
-            setOneDataByKey(configDbRef.current, "junior-config", {
-              hasInit: true,
+              importJsonData(response.data);
+            })
+            .catch((error) => {
+              console.error("文件出错:", error);
             });
-            importJsonData(response.data);
-          })
-          .catch((error) => {
-            console.error("文件出错:", error);
+
+          // 导入book到数据库，
+          // const BookList: BookItem[] = [
+          //   { key: "junior", title: "初中单词", desc: "Junior High", totalWords: 1800 },
+          //   { key: "senior", title: "高中单词", desc: "Senior High", totalWords: 3506 },
+          //   { key: "cet4", title: "四级单词", desc: "CET-4", totalWords: 4500 },
+          //   { key: "cet6", title: "六级单词", desc: "CET-6", totalWords: 5500 },
+          // ];
+
+          // all perform ok, then set hasInit to true
+          setOneDataByKey(configDbRef.current, "junior-config", {
+            hasInit: true,
           });
+        } catch (err) {
+          console.error("读取文件失败:", err);
+        }
       }
     });
   }, []);

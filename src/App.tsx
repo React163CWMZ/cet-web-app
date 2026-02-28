@@ -7,17 +7,22 @@ import { getAllDataFromStore, isArrayNonEmpty } from "./utils/arrayFunc.ts";
 
 const { Title } = Typography;
 
-// 定义一个通用的 JSON 类型
-type JsonObject = Record<string, any>;
 // 1. 定义对象的结构
 interface TranslationsItem {
   translation: string; // 对应 "能力，能耐；才能"
   type: string; // 对应 "n" (词性)
 }
 
+interface SentencesItem {
+  sentence: string;
+  translation: string;
+}
+
 interface storedWord {
   word: string;
   translations: string;
+  uk: string;
+  sentences: string;
 }
 // word data with group
 interface groupWord {
@@ -68,9 +73,12 @@ const App: React.FC = () => {
   const groupRef = useRef<number>(1);
 
   const [wordIndex, setWordIndex] = useState<number>(1); // 定义状态
-  const [word, setWord] = useState<string>(); // 定义状态，默认值可以是空数组或 null
-  // const [translations, setTranslations] = useState<string>();
-  const [translationsArr, setTranslationsArr] = useState<TranslationsItem[]>();
+  const [word, setWord] = useState<string>("");
+  const [phonetic, setPhonetic] = useState<string>("");
+  const [sentencesArr, setSentencesArr] = useState<SentencesItem[]>([]);
+  const [translationsArr, setTranslationsArr] = useState<TranslationsItem[]>(
+    [],
+  );
   const [nextOneDisable, setNextOneDisable] = useState<boolean>(false);
   const [preOneDisable, setPreOneDisable] = useState<boolean>(false);
 
@@ -129,17 +137,22 @@ const App: React.FC = () => {
       );
       // console.log("333==", wordData, showWord, wordIndex, storedData);
 
-      let translations_arr: TranslationsItem[] = [];
       // 2. 判断数据是否存在
       if (storedData) {
         // 如果存在，更新到 state (localforage 会自动反序列化对象/数组)
         setWord(storedData["word"]);
 
+        setPhonetic(storedData["uk"]);
+
         // vs code prompt type error, this is strict ensure type correct
         if (Array.isArray(storedData["translations"])) {
-          translations_arr = storedData["translations"];
+          setTranslationsArr(storedData["translations"]);
         }
-        setTranslationsArr(translations_arr);
+
+        if (Array.isArray(storedData["sentences"])) {
+          setSentencesArr(storedData["sentences"]);
+        }
+
         // let utteranceWord = new SpeechSynthesisUtterance(storedData["word"]),
         //   utteranceWord.lang = "en-US"
         //   utteranceWord.volume = 1;
@@ -197,11 +210,16 @@ const App: React.FC = () => {
         // 如果存在，更新到 state (localforage 会自动反序列化对象/数组)
         setWord(storedData["word"]);
 
+        setPhonetic(storedData["uk"]);
+
         // vs code prompt type error, this is strict ensure type correct
         if (Array.isArray(storedData["translations"])) {
-          translations_arr = storedData["translations"];
+          setTranslationsArr(storedData["translations"]);
         }
-        setTranslationsArr(translations_arr);
+
+        if (Array.isArray(storedData["sentences"])) {
+          setSentencesArr(storedData["sentences"]);
+        }
         // let utteranceWord = new SpeechSynthesisUtterance(storedData["word"]),
         //   utteranceWord.lang = "en-US"
         //   utteranceWord.volume = 1;
@@ -226,11 +244,6 @@ const App: React.FC = () => {
 
       setPreOneDisable(false);
     }
-  };
-  // goto list page
-  const handleFilter = () => {
-    // todo filter known or unknown words
-    navigate("/list");
   };
 
   useEffect(() => {
@@ -372,10 +385,18 @@ const App: React.FC = () => {
           }}
         >
           <p style={{ fontSize: 22, fontWeight: 500 }}>{word}</p>
+          <p style={{ fontSize: 22, fontWeight: 500 }}>{phonetic}</p>
           {/* 使用可选链 (Optional Chaining) */}
           {translationsArr?.map((item, index) => (
             <p key={index}>
               {item.translation} {item.type}
+            </p>
+          ))}
+
+          {sentencesArr?.map((item, index) => (
+            <p key={index}>
+              {item.sentence}
+              {item.translation}
             </p>
           ))}
         </Card>

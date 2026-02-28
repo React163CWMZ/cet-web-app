@@ -8,6 +8,7 @@ import StudyCalendar from "./pages/StudyCalendar";
 import BookSelect from "./pages/BookSelect";
 import StudyDay from "./pages/StudyDay";
 import Setting from "./pages/Setting";
+import Guide from "./pages/Guide";
 
 // 路由配置
 export const router: RouteObject[] = [
@@ -15,9 +16,10 @@ export const router: RouteObject[] = [
   { path: "/study", element: <App /> },
   { path: "/about", element: <About /> },
   { path: "/calendar", element: <StudyCalendar /> },
-  { path: "/", element: <BookSelect /> },
+  { path: "/book", element: <BookSelect /> },
   { path: "/daytask", element: <StudyDay /> },
   { path: "/setting", element: <Setting /> },
+  { path: "/", element: <Guide /> },
 
   {
     path: "*", // 404 兜底路由
