@@ -47,8 +47,6 @@ const Guide = () => {
         }
       });
 
-      return;
-
       if (hasInit === false || hasScheme === false) {
         navigate("/book");
       } else {
