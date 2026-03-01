@@ -1,3 +1,4 @@
+// after id change to word, can not use.
 import React, { useState, useEffect, useRef } from "react";
 import { Flex, Card, Spin, Typography, Space, Row, Col, Button } from "antd";
 import useLocalforageDb from "../utils/useLocalforageDb";
@@ -140,7 +141,7 @@ const WordListInfinite: React.FC<WordListProps> = () => {
   // 用 useRef 存储，不触发重渲染, speed more
   const requestLock = useRef<boolean>(false);
   // 新增：用ref存储数据库实例，避免重复初始化
-  const juniorDbRef = useRef(useLocalforageDb("MyDb", "juniorStore"));
+  const juniorDbRef = useRef(useLocalforageDb("MyDb", "kaoyanStore"));
 
   // 模拟数据获取 - 添加返回类型 Promise<void>
   const fetchData = async (): Promise<void> => {

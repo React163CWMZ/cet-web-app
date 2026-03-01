@@ -13,7 +13,10 @@ import {
   // message,
   Modal,
 } from "antd";
-import useLocalforageDb, { getOneDataByKey } from "../utils/useLocalforageDb";
+import useLocalforageDb, {
+  getOneData,
+  getOneDataByKey,
+} from "../utils/useLocalforageDb";
 import { arrayDiff } from "../utils/arrayFunc";
 const { Text } = Typography;
 
@@ -90,6 +93,14 @@ interface groupWord {
 // 2. 定义组件的 Props (如果需要的话)
 interface WordListProps {
   // 例如: initialPage?: number;
+}
+
+interface SchemeBrief {
+  key?: string;
+  book?: string;
+  wordsGroup: number;
+  groupNums: number;
+  startDay?: string;
 }
 
 // 中文释义
@@ -205,7 +216,7 @@ const WordList: React.FC<WordListProps> = () => {
     const learn_words = arrayDiff<string>(judged_words, known_words.current);
     console.log(learn_words, judged_words, known_words.current);
 
-    const Db = juniorGroupDbRef.current;
+    const Db = wordGroupDbRef.current;
 
     try {
       if (learn_words.length < 3) {
@@ -242,9 +253,29 @@ const WordList: React.FC<WordListProps> = () => {
   const requestLock = useRef<boolean>(false);
   // 新增：用ref存储数据库实例，避免重复初始化
 
-  const juniorDbRef = useRef(useLocalforageDb("MyDb", "juniorStore"));
+  const schemeBriefDbRef = useRef(useLocalforageDb("MyDb", "schemeBrief"));
+  const bookRef = useRef<string>("");
+  const wordDbRef = useRef(useLocalforageDb("MyDb", "juniorStore"));
 
-  const juniorGroupDbRef = useRef(useLocalforageDb("MyDb", "juniorGroup"));
+  const juniorDb = useLocalforageDb("MyDb", "juniorStore");
+  const seniorDb = useLocalforageDb("MyDb", "seniorStore");
+  const cet4Db = useLocalforageDb("MyDb", "cet4Store");
+  const cet6Db = useLocalforageDb("MyDb", "cet6Store");
+  const kaoyanDb = useLocalforageDb("MyDb", "kaoyanStore");
+
+  if (bookRef.current === "初中单词") {
+    wordDbRef.current = juniorDb;
+  } else if (bookRef.current === "高中单词") {
+    wordDbRef.current = seniorDb;
+  } else if (bookRef.current === "四级单词") {
+    wordDbRef.current = cet4Db;
+  } else if (bookRef.current === "六级单词") {
+    wordDbRef.current = cet6Db;
+  } else if (bookRef.current === "考研单词") {
+    wordDbRef.current = kaoyanDb;
+  }
+
+  const wordGroupDbRef = useRef(useLocalforageDb("MyDb", "wordGroup"));
 
   async function getGroupDataFromStore(Db: LocalForage) {
     let dataArray: groupWord[] = [];
@@ -279,14 +310,13 @@ const WordList: React.FC<WordListProps> = () => {
     try {
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const juniorDB = juniorDbRef.current;
       let mockData: WordItem[] = [];
       let storedData: storedWord | null = null;
       let word: WordItem | null = null;
       let someTemp: unknown; // make error of type vanish
 
       for (let i = 0; i < data.length; i++) {
-        storedData = await juniorDB.getItem(data[i]);
+        storedData = await wordDbRef.current.getItem(data[i]);
         // console.log("ddd", storedData);
         if (storedData) {
           someTemp = storedData["translations"];
@@ -320,11 +350,16 @@ const WordList: React.FC<WordListProps> = () => {
   // 初始化加载
   useEffect(() => {
     async function initFetch() {
-      let groupData = await getGroupDataFromStore(
-        juniorGroupDbRef.current,
-      ).then((res) => {
-        return res;
+      getOneData(schemeBriefDbRef.current).then((scheme) => {
+        if (scheme) {
+          bookRef.current = (scheme as SchemeBrief)["book"] as string;
+        }
       });
+      let groupData = await getGroupDataFromStore(wordGroupDbRef.current).then(
+        (res) => {
+          return res;
+        },
+      );
       // console.log("groupData:", groupData);
       if (groupData) {
         let known_words_temp: string[] = [];

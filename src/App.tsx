@@ -2,7 +2,10 @@ import { Card, Button, Flex, Typography, Modal, message, Divider } from "antd"; 
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-import useLocalforageDb, { getOneDataByKey } from "./utils/useLocalforageDb.ts";
+import useLocalforageDb, {
+  getOneData,
+  getOneDataByKey,
+} from "./utils/useLocalforageDb.ts";
 import { getAllDataFromStore, isArrayNonEmpty } from "./utils/arrayFunc.ts";
 
 const { Title } = Typography;
@@ -31,6 +34,14 @@ interface groupWord {
   isKnown: boolean;
   index?: number;
 }
+interface SchemeBrief {
+  key?: string;
+  book?: string;
+  wordsGroup: number;
+  groupNums: number;
+  startDay?: string;
+}
+
 const App: React.FC = () => {
   const navigate = useNavigate();
   // const location = useLocation();
@@ -71,6 +82,8 @@ const App: React.FC = () => {
 
   const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
   const groupRef = useRef<number>(1);
+  const schemeBriefDbRef = useRef(useLocalforageDb("MyDb", "schemeBrief"));
+  const bookRef = useRef<string>("");
 
   const [wordIndex, setWordIndex] = useState<number>(1); // 定义状态
   const [word, setWord] = useState<string>("");
@@ -85,8 +98,26 @@ const App: React.FC = () => {
   const [wordData, setWordData] = useState<groupWord[]>([]);
   const preWordRef = useRef<number>(1);
 
-  const juniorDbRef = useRef(useLocalforageDb("MyDb", "juniorStore"));
-  const juniorGroupDbRef = useRef(useLocalforageDb("MyDb", "juniorGroup"));
+  const wordGroupDbRef = useRef(useLocalforageDb("MyDb", "wordGroup"));
+  const wordDbRef = useRef(useLocalforageDb("MyDb", "juniorStore"));
+
+  const juniorDb = useLocalforageDb("MyDb", "juniorStore");
+  const seniorDb = useLocalforageDb("MyDb", "seniorStore");
+  const cet4Db = useLocalforageDb("MyDb", "cet4Store");
+  const cet6Db = useLocalforageDb("MyDb", "cet6Store");
+  const kaoyanDb = useLocalforageDb("MyDb", "kaoyanStore");
+
+  if (bookRef.current === "初中单词") {
+    wordDbRef.current = juniorDb;
+  } else if (bookRef.current === "高中单词") {
+    wordDbRef.current = seniorDb;
+  } else if (bookRef.current === "四级单词") {
+    wordDbRef.current = cet4Db;
+  } else if (bookRef.current === "六级单词") {
+    wordDbRef.current = cet6Db;
+  } else if (bookRef.current === "考研单词") {
+    wordDbRef.current = kaoyanDb;
+  }
 
   // 倒计时数字
   const [count, setCount] = useState(1);
@@ -95,7 +126,7 @@ const App: React.FC = () => {
 
   // get group words which need to learn
   const getGroupWords = async () => {
-    await getAllDataFromStore(juniorGroupDbRef.current).then((data) => {
+    await getAllDataFromStore(wordGroupDbRef.current).then((data) => {
       // console.log("11groupData:", data, groupRef.current);
       if (data) {
         data = (data as groupWord[]).filter((item) => {
@@ -132,10 +163,9 @@ const App: React.FC = () => {
       // current word index, make pre or next
       preWordRef.current = (showWord[0]["index"] as number) - 1;
       setWordIndex((showWord[0]["index"] as number) + 1);
-      const storedData: storedWord | null = await juniorDbRef.current.getItem(
+      const storedData: storedWord | null = await wordDbRef.current.getItem(
         showWord[0]["word"],
       );
-      // console.log("333==", wordData, showWord, wordIndex, storedData);
 
       // 2. 判断数据是否存在
       if (storedData) {
@@ -198,12 +228,10 @@ const App: React.FC = () => {
       // current word index, make pre or next
       preWordRef.current = (showWord[0]["index"] as number) - 1;
       setWordIndex((showWord[0]["index"] as number) + 1);
-      const storedData: storedWord | null = await juniorDbRef.current.getItem(
+      const storedData: storedWord | null = await wordDbRef.current.getItem(
         showWord[0]["word"],
       );
       // console.log("000==", wordData, showWord, wordIndex, storedData);
-
-      let translations_arr: TranslationsItem[] = [];
       // 2. 判断数据是否存在
       if (storedData) {
         // console.log("X:", typeof storedData["translations"]);
@@ -251,6 +279,11 @@ const App: React.FC = () => {
       groupRef.current = group as number;
       // get group, then get group words
       getGroupWords();
+    });
+    getOneData(schemeBriefDbRef.current).then((scheme) => {
+      if (scheme) {
+        bookRef.current = (scheme as SchemeBrief)["book"] as string;
+      }
     });
 
     // 每秒减1

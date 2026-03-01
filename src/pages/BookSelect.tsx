@@ -36,7 +36,7 @@ import axios, { all } from "axios";
 const { Title } = Typography;
 
 // 单词级别类型
-export type BookLevel = "junior" | "senior" | "cet4" | "cet6";
+export type BookLevel = "junior" | "senior" | "cet4" | "cet6" | "kaoyan";
 
 interface BookItem {
   key: BookLevel;
@@ -59,6 +59,7 @@ interface storedWord {
 }
 
 interface SchemeBrief {
+  key?: string;
   book?: string;
   wordsGroup: number;
   groupNums: number;
@@ -84,14 +85,18 @@ interface projConfig {
 }
 
 // 每日学习数量
-type DailyCount = 20 | 30 | 40 | 50 | 60 | 70 | 80;
+type DailyCount = 20 | 30 | 40 | 50 | 60 | 70 | 80 | 100;
 
 const BookSelect = () => {
   // 新增：用ref存储数据库实例，避免重复初始化
   const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
   const juniorDbRef = useRef(useLocalforageDb("MyDb", "juniorStore"));
-  const juniorGroupDbRef = useRef(useLocalforageDb("MyDb", "juniorGroup"));
-  const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "SchemeBrief"));
+  const seniorDbRef = useRef(useLocalforageDb("MyDb", "seniorStore"));
+  const cet4DbRef = useRef(useLocalforageDb("MyDb", "cet4Store"));
+  const cet6DbRef = useRef(useLocalforageDb("MyDb", "cet6Store"));
+  const kaoyanDbRef = useRef(useLocalforageDb("MyDb", "kaoyanStore"));
+  const wordGroupDbRef = useRef(useLocalforageDb("MyDb", "wordGroup"));
+  const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "schemeBrief"));
   const userSchemeDbRef = useRef(useLocalforageDb("MyDb", "userScheme"));
   const reviewSchemeDbRef = useRef(useLocalforageDb("MyDb", "reviewScheme"));
   // read from db, save to array
@@ -125,10 +130,11 @@ const BookSelect = () => {
 
   // 1. 单词本数据（你可以改成自己的真实数量）
   const BookList: BookItem[] = [
-    { key: "junior", title: "初中单词", desc: "Junior High", totalWords: 1800 },
-    { key: "senior", title: "高中单词", desc: "Senior High", totalWords: 3506 },
-    { key: "cet4", title: "四级单词", desc: "CET-4", totalWords: 4500 },
-    { key: "cet6", title: "六级单词", desc: "CET-6", totalWords: 5500 },
+    { key: "junior", title: "初中单词", desc: "Junior High", totalWords: 1991 },
+    { key: "senior", title: "高中单词", desc: "Senior High", totalWords: 3753 },
+    { key: "cet4", title: "四级单词", desc: "CET-4", totalWords: 4544 },
+    { key: "cet6", title: "六级单词", desc: "CET-6", totalWords: 3992 },
+    { key: "kaoyan", title: "考研单词", desc: "Kaoyan", totalWords: 5057 },
   ];
 
   // 2. 状态
@@ -150,6 +156,34 @@ const BookSelect = () => {
           setAllData(data);
         }
       });
+    } else if (item["key"] === "senior") {
+      getAllDataFromStore(seniorDbRef.current).then((data) => {
+        if (data) {
+          setSelectedBook({ ...item, totalWords: data.length });
+          setAllData(data);
+        }
+      });
+    } else if (item["key"] === "cet4") {
+      getAllDataFromStore(cet4DbRef.current).then((data) => {
+        if (data) {
+          setSelectedBook({ ...item, totalWords: data.length });
+          setAllData(data);
+        }
+      });
+    } else if (item["key"] === "cet6") {
+      getAllDataFromStore(cet6DbRef.current).then((data) => {
+        if (data) {
+          setSelectedBook({ ...item, totalWords: data.length });
+          setAllData(data);
+        }
+      });
+    } else if (item["key"] === "kaoyan") {
+      getAllDataFromStore(kaoyanDbRef.current).then((data) => {
+        if (data) {
+          setSelectedBook({ ...item, totalWords: data.length });
+          setAllData(data);
+        }
+      });
     } else {
       console.log(item["key"]);
       return;
@@ -159,7 +193,7 @@ const BookSelect = () => {
     setPlanModalVisible(true);
   };
 
-  // 4. 计算学习天数
+  // 4. 计算学习完成天数
   //dailyCount change lead to BookSelect reload,totalDays will be update new value.
   const totalWords = allData.length || 0;
   const totalDays = Math.ceil(totalWords / dailyCount);
@@ -169,6 +203,7 @@ const BookSelect = () => {
     setPlanModalVisible(false);
 
     let mySchemeBrief: SchemeBrief = {
+      key: selectedBook?.key,
       book: selectedBook?.title,
       wordsGroup: dailyCount,
       groupNums: totalDays,
@@ -193,8 +228,8 @@ const BookSelect = () => {
       };
     });
 
-    await clearStore(juniorGroupDbRef.current);
-    await saveListData<groupWord>(juniorGroupDbRef.current, result);
+    await clearStore(wordGroupDbRef.current);
+    await saveListData<groupWord>(wordGroupDbRef.current, result);
 
     // 每天学习数据的构造
 
@@ -229,7 +264,7 @@ const BookSelect = () => {
     await saveListData<ReviewItem>(reviewSchemeDbRef.current, resultArr);
 
     message.success(
-      `已选择：${selectedBook?.title}，每天 ${dailyCount} 个，共 ${totalDays} 天`,
+      `已选择：${selectedBook?.title}，每天 ${dailyCount} 个，共 ${totalDays + 21} 天完成！`,
     );
 
     // 这里可以跳转到单词任务页面
@@ -243,23 +278,24 @@ const BookSelect = () => {
     });
   };
 
-  async function importJsonData(arr: storedWord[]) {
+  async function importJsonData(arr: storedWord[], Db: LocalForage) {
     try {
-      if (isArrayNonEmpty(arr)) {
-        await Promise.all(
-          arr.map((value) => {
-            return juniorDbRef.current.setItem(value["word"], {
-              word: value["word"],
-              translations: value["translations"],
-              uk: value["uk"],
-              sentences: value["sentences"],
-            });
-          }),
-        );
-        console.log("导入成功！");
-      }
+      await clearStore(Db);
+      await Promise.all(
+        arr.map((value) => {
+          return Db.setItem(value["word"], {
+            word: value["word"],
+            translations: value["translations"],
+            uk: value["uk"],
+            sentences: value["sentences"],
+          });
+        }),
+      );
+      console.log("导入成功！");
+      return true;
     } catch (err) {
-      console.error("导入失败:", err);
+      console.log("导入数据失败:", err);
+      return false;
     }
   }
 
@@ -273,33 +309,144 @@ const BookSelect = () => {
 
       // console.log("12222", hasInit);
       if (hasInit === false) {
+        //set hasInit to true , then catch error,set hasInit to false. avoid repeat import when data file exist but error in data.
+        setOneDataByKey(configDbRef.current, "junior-config", {
+          hasInit: true,
+        });
+
         // 路径直接以 / 开头，指向 public 目录
         try {
+          // save junior high data to db
           axios
             .get("junior_data.json")
             .then((response) => {
-              console.log("333", response.data);
-
-              importJsonData(response.data);
+              console.log("333", response);
+              // judge data is array and not empty, return true, else false
+              if (isArrayNonEmpty(response.data) === false) {
+                throw new Error("***_data.json is empty");
+              }
+              // throw new Error("模拟错误123123");
+              return importJsonData(response.data, juniorDbRef.current).then(
+                (res) => {
+                  // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
+                  if (res === false) {
+                    throw new Error("***_data导入失败666");
+                  }
+                },
+              );
             })
             .catch((error) => {
-              console.error("文件出错:", error);
+              console.log("***_data出错:", error);
+              setOneDataByKey(configDbRef.current, "junior-config", {
+                hasInit: false,
+              });
             });
 
-          // 导入book到数据库，
-          // const BookList: BookItem[] = [
-          //   { key: "junior", title: "初中单词", desc: "Junior High", totalWords: 1800 },
-          //   { key: "senior", title: "高中单词", desc: "Senior High", totalWords: 3506 },
-          //   { key: "cet4", title: "四级单词", desc: "CET-4", totalWords: 4500 },
-          //   { key: "cet6", title: "六级单词", desc: "CET-6", totalWords: 5500 },
-          // ];
+          // save senior high data to db
+          axios
+            .get("senior_data.json")
+            .then((response) => {
+              console.log("333", response);
+              // judge data is array and not empty, return true, else false
+              if (isArrayNonEmpty(response.data) === false) {
+                throw new Error("***_data.json is empty");
+              }
+              // throw new Error("模拟错误123123");
+              return importJsonData(response.data, seniorDbRef.current).then(
+                (res) => {
+                  // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
+                  if (res === false) {
+                    throw new Error("***_data导入失败666");
+                  }
+                },
+              );
+            })
+            .catch((error) => {
+              console.log("***_data出错:", error);
+              setOneDataByKey(configDbRef.current, "junior-config", {
+                hasInit: false,
+              });
+            });
 
-          // all perform ok, then set hasInit to true
-          setOneDataByKey(configDbRef.current, "junior-config", {
-            hasInit: true,
-          });
+          // save CET4 data to db
+          axios
+            .get("cet4_data.json")
+            .then((response) => {
+              console.log("333", response);
+              // judge data is array and not empty, return true, else false
+              if (isArrayNonEmpty(response.data) === false) {
+                throw new Error("***_data.json is empty");
+              }
+              // throw new Error("模拟错误123123");
+              return importJsonData(response.data, cet4DbRef.current).then(
+                (res) => {
+                  // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
+                  if (res === false) {
+                    throw new Error("***_data导入失败666");
+                  }
+                },
+              );
+            })
+            .catch((error) => {
+              console.log("***_data出错:", error);
+              setOneDataByKey(configDbRef.current, "junior-config", {
+                hasInit: false,
+              });
+            });
+
+          // save CET6 data to db
+          axios
+            .get("cet6_data.json")
+            .then((response) => {
+              console.log("333", response);
+              // judge data is array and not empty, return true, else false
+              if (isArrayNonEmpty(response.data) === false) {
+                throw new Error("***_data.json is empty");
+              }
+              // throw new Error("模拟错误123123");
+              return importJsonData(response.data, cet6DbRef.current).then(
+                (res) => {
+                  // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
+                  if (res === false) {
+                    throw new Error("***_data导入失败666");
+                  }
+                },
+              );
+            })
+            .catch((error) => {
+              console.log("***_data出错:", error);
+              setOneDataByKey(configDbRef.current, "junior-config", {
+                hasInit: false,
+              });
+            });
+
+          // save kaoyan data to db
+          axios
+            .get("kaoyan_data.json")
+            .then((response) => {
+              console.log("333kaoyan", response);
+              // judge data is array and not empty, return true, else false
+              if (isArrayNonEmpty(response.data) === false) {
+                throw new Error("***_data.json is empty");
+              }
+              // throw new Error("模拟错误123123");
+              return importJsonData(response.data, kaoyanDbRef.current).then(
+                (res) => {
+                  // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
+                  if (res === false) {
+                    throw new Error("***_data导入失败666");
+                  }
+                },
+              );
+            })
+            .catch((error) => {
+              console.log("***_data出错:", error);
+              setOneDataByKey(configDbRef.current, "junior-config", {
+                hasInit: false,
+              });
+            });
         } catch (err) {
-          console.error("读取文件失败:", err);
+          console.log("保存数据库失败:", err);
         }
       }
     });
@@ -359,12 +506,16 @@ const BookSelect = () => {
             <Radio value={60}>每天 60 个</Radio>
             <Radio value={70}>每天 70 个</Radio>
             <Radio value={80}>每天 80 个</Radio>
+            <Radio value={100}>每天 100 个</Radio>
           </Radio.Group>
 
           <div style={{ marginTop: 10 }}>
             <p>总单词数：{totalWords} 个</p>
             <p>
-              预计学习天数：<strong>{totalDays}</strong> 天
+              学习组数：<strong>{totalDays}</strong> 组
+            </p>
+            <p>
+              学习天数：<strong>{totalDays + 21}</strong> 天
             </p>
           </div>
         </Space>
