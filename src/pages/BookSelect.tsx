@@ -11,7 +11,7 @@ import {
   Radio,
   Button,
   message,
-  List,
+  Spin,
 } from "antd";
 
 import { BookOutlined } from "@ant-design/icons";
@@ -88,6 +88,9 @@ interface projConfig {
 type DailyCount = 20 | 30 | 40 | 50 | 60 | 70 | 80 | 100;
 
 const BookSelect = () => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   // 新增：用ref存储数据库实例，避免重复初始化
   const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
   const juniorDbRef = useRef(useLocalforageDb("MyDb", "juniorStore"));
@@ -299,12 +302,23 @@ const BookSelect = () => {
     }
   }
 
+  const reloadClick = () => {
+    navigate("/book", {
+      state: {
+        message: "数据初始化失败，请刷新重试！",
+      },
+    });
+  };
+
   useEffect(() => {
     let hasInit: boolean = false;
     getOneDataByKey(configDbRef.current, "junior-config").then((config) => {
       if (config) {
         // console.log("11111", config);
         hasInit = (config as projConfig)["hasInit"];
+      }
+      if (hasInit === true) {
+        setLoading(false);
       }
 
       // console.log("12222", hasInit);
@@ -320,7 +334,7 @@ const BookSelect = () => {
           axios
             .get("junior_data.json")
             .then((response) => {
-              console.log("333", response);
+              // console.log("333", response);
               // judge data is array and not empty, return true, else false
               if (isArrayNonEmpty(response.data) === false) {
                 throw new Error("***_data.json is empty");
@@ -340,13 +354,14 @@ const BookSelect = () => {
               setOneDataByKey(configDbRef.current, "junior-config", {
                 hasInit: false,
               });
+              setError("数据初始化失败，请刷新重试！");
             });
 
           // save senior high data to db
           axios
             .get("senior_data.json")
             .then((response) => {
-              console.log("333", response);
+              // console.log("333", response);
               // judge data is array and not empty, return true, else false
               if (isArrayNonEmpty(response.data) === false) {
                 throw new Error("***_data.json is empty");
@@ -366,13 +381,14 @@ const BookSelect = () => {
               setOneDataByKey(configDbRef.current, "junior-config", {
                 hasInit: false,
               });
+              setError("数据初始化失败，请刷新重试！");
             });
 
           // save CET4 data to db
           axios
             .get("cet4_data.json")
             .then((response) => {
-              console.log("333", response);
+              // console.log("333", response);
               // judge data is array and not empty, return true, else false
               if (isArrayNonEmpty(response.data) === false) {
                 throw new Error("***_data.json is empty");
@@ -392,13 +408,14 @@ const BookSelect = () => {
               setOneDataByKey(configDbRef.current, "junior-config", {
                 hasInit: false,
               });
+              setError("数据初始化失败，请刷新重试！");
             });
 
           // save CET6 data to db
           axios
             .get("cet6_data.json")
             .then((response) => {
-              console.log("333", response);
+              // console.log("333", response);
               // judge data is array and not empty, return true, else false
               if (isArrayNonEmpty(response.data) === false) {
                 throw new Error("***_data.json is empty");
@@ -418,13 +435,14 @@ const BookSelect = () => {
               setOneDataByKey(configDbRef.current, "junior-config", {
                 hasInit: false,
               });
+              setError("数据初始化失败，请刷新重试！");
             });
 
           // save kaoyan data to db
           axios
             .get("kaoyan_data.json")
             .then((response) => {
-              console.log("333kaoyan", response);
+              // console.log("333kaoyan", response);
               // judge data is array and not empty, return true, else false
               if (isArrayNonEmpty(response.data) === false) {
                 throw new Error("***_data.json is empty");
@@ -432,6 +450,7 @@ const BookSelect = () => {
               // throw new Error("模拟错误123123");
               return importJsonData(response.data, kaoyanDbRef.current).then(
                 (res) => {
+                  setLoading(false); // 数据初始化完成，关闭加载状态。这个数据量最大，等它最后加载完成再关闭loading。也可以放在每个数据的then里，但可能会提前关闭loading。
                   // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
                   if (res === false) {
                     throw new Error("***_data导入失败666");
@@ -444,16 +463,35 @@ const BookSelect = () => {
               setOneDataByKey(configDbRef.current, "junior-config", {
                 hasInit: false,
               });
+              setError("数据初始化失败，请刷新重试！");
             });
         } catch (err) {
-          console.log("保存数据库失败:", err);
+          console.log("Error:", err);
+        } finally {
         }
       }
     });
   }, []);
 
+  // data load error, prompt user to refresh page.
+  if (error) {
+    return (
+      <div style={{ padding: 20, textAlign: "center" }}>
+        <p style={{ color: "red" }}> {error}</p>
+        {/* 重新加载按钮 */}
+        <button
+          onClick={reloadClick}
+          style={{ padding: "10px 20px", fontSize: "16px" }}
+        >
+          点击重新加载
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="word-select-container">
+      <Spin spinning={loading} fullscreen />;
       <Space orientation="vertical" size="large" style={{ width: "100%" }}>
         <div className="title-wrapper">
           <Title level={2}>选择单词本</Title>
@@ -478,7 +516,6 @@ const BookSelect = () => {
           ))}
         </Row>
       </Space>
-
       {/* ========== 学习计划弹窗 ========== */}
       <Modal
         title={`学习计划：${selectedBook?.title}`}

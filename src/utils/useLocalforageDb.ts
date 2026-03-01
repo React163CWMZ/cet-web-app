@@ -20,27 +20,24 @@ export async function getOneDataByKey<T>(Db: LocalForage, key: string) {
   }
 }
 
-export async function setOneDataByKey<T>(
+export async function setOneDataByKey(
   Db: LocalForage,
   key: string,
   value: unknown,
 ) {
-  let result: T | null = null;
   try {
     await Db.setItem(key, value);
 
-    return result; // 数据拿到后再执行后续逻辑
+    return true;
   } catch (err) {
     console.error("写入失败", err);
+    return false;
   }
 }
 
-export async function getOneData<T>(Db: LocalForage) {
-  let result: T | null = null;
+export async function getOneData(Db: LocalForage) {
   try {
-    result = await Db.getItem("1");
-
-    return result; // 数据拿到后再执行后续逻辑
+    return await Db.getItem("1");
   } catch (err) {
     console.error("读取失败", err);
   }
