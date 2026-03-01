@@ -113,7 +113,7 @@ const BookSelect = () => {
         // 将每一条数据构造成对象，推入数组
         // console.log(value);
         if (!value || !value["word"]) {
-          // console.log(key, Db.getItem(key), Db.getItem("OK"));
+          //word is empty or undefined, skip this data and log error
           return;
         }
         dataArray.push({
