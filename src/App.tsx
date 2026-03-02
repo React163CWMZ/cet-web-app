@@ -1,7 +1,16 @@
-import { Card, Button, Flex, Typography, Modal, message, Divider } from "antd"; // 1. 导入 Card 组件
+import {
+  Card,
+  Button,
+  Flex,
+  Typography,
+  Modal,
+  message,
+  Divider,
+  Space,
+} from "antd"; // 1. 导入 Card 组件
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { AudioOutlined, SoundOutlined, MutedOutlined } from "@ant-design/icons";
 import useLocalforageDb, {
   getOneData,
   getOneDataByKey,
@@ -364,7 +373,7 @@ const App: React.FC = () => {
           <p>选中这些单词就不会出现，建议首次学习筛选</p>
         </Modal>
         <Card
-          title="初中单词"
+          title={bookRef.current}
           extra={
             <>
               <Button onClick={showFilterWordModal}>筛选</Button>
@@ -397,6 +406,7 @@ const App: React.FC = () => {
             overflow: "hidden",
             borderColor: "#4096FF",
             backgroundColor: "#E6F4FF",
+            textAlign: "center",
           }}
           // ✅ 新版 antd 推荐：用 styles 代替 bodyStyle
           styles={{
@@ -412,24 +422,42 @@ const App: React.FC = () => {
               padding: "16",
             },
             actions: {
-              backgroundColor: "#fafafa",
+              backgroundColor: "#E6F4FF",
               borderTop: "1px solid #e8e8e8",
             },
           }}
         >
           <p style={{ fontSize: 22, fontWeight: 500 }}>{word}</p>
-          <p style={{ fontSize: 22, fontWeight: 500 }}>{phonetic}</p>
+          <p style={{ fontSize: 20, fontWeight: 300, color: "#64748b" }}>
+            <Space>
+              [{phonetic}]
+              <SoundOutlined
+                style={{ paddingTop: 10 }}
+                onClick={() => {
+                  speechSynthesis.speak(new SpeechSynthesisUtterance(word));
+                }}
+              />
+            </Space>
+          </p>
           {/* 使用可选链 (Optional Chaining) */}
           {translationsArr?.map((item, index) => (
-            <p key={index}>
-              {item.translation} {item.type}
+            <p
+              style={{ fontSize: 20, fontWeight: 300, color: "#333" }}
+              key={index}
+            >
+              {item.translation}{" "}
+              <span style={{ color: "#1e293b" }}>{item.type}</span>
             </p>
           ))}
-
+          <Divider />
           {sentencesArr?.map((item, index) => (
             <p key={index}>
-              {item.sentence}
-              {item.translation}
+              <p style={{ fontSize: 22, fontWeight: 300, color: "#1e293b" }}>
+                {item.sentence}
+              </p>
+              <p style={{ fontSize: 20, fontWeight: 300, color: "#333" }}>
+                {item.translation}
+              </p>
             </p>
           ))}
         </Card>
