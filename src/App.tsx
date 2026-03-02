@@ -10,7 +10,7 @@ import {
 } from "antd"; // 1. 导入 Card 组件
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { AudioOutlined, SoundOutlined, MutedOutlined } from "@ant-design/icons";
+import { SoundOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import useLocalforageDb, {
   getOneData,
   getOneDataByKey,
@@ -87,6 +87,20 @@ const App: React.FC = () => {
 
   const filterWordhandleCancel = () => {
     setIsFilterWordModalOpen(false);
+  };
+
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+
+  const showCloseModal = () => {
+    setIsCloseModalOpen(true);
+  };
+  const closeHandleOk = () => {
+    setIsCloseModalOpen(false);
+    navigate("/daytask");
+  };
+
+  const closeHandleCancel = () => {
+    setIsCloseModalOpen(false);
   };
 
   const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
@@ -372,8 +386,31 @@ const App: React.FC = () => {
           <p>对于别人难，但是你已经掌握的单词</p>
           <p>选中这些单词就不会出现，建议首次学习筛选</p>
         </Modal>
+        <Modal
+          title="确定放弃本次学习吗？"
+          okText="确定"
+          cancelText="取消"
+          closable={{ "aria-label": "Custom Close Button" }}
+          open={isCloseModalOpen}
+          onOk={closeHandleOk}
+          onCancel={closeHandleCancel}
+          styles={{
+            header: {},
+            body: {},
+          }}
+        >
+          <Divider />
+          <p>坚持比放弃多一划，所以坚持比放弃更难一些。</p>
+        </Modal>
         <Card
-          title={bookRef.current}
+          title={
+            <>
+              <Space>
+                <CloseCircleOutlined onClick={showCloseModal} />
+                {bookRef.current}
+              </Space>
+            </>
+          }
           extra={
             <>
               <Button onClick={showFilterWordModal}>筛选</Button>
@@ -406,7 +443,6 @@ const App: React.FC = () => {
             overflow: "hidden",
             borderColor: "#4096FF",
             backgroundColor: "#E6F4FF",
-            textAlign: "center",
           }}
           // ✅ 新版 antd 推荐：用 styles 代替 bodyStyle
           styles={{
@@ -427,39 +463,41 @@ const App: React.FC = () => {
             },
           }}
         >
-          <p style={{ fontSize: 22, fontWeight: 500 }}>{word}</p>
-          <p style={{ fontSize: 20, fontWeight: 300, color: "#64748b" }}>
-            <Space>
-              [{phonetic}]
-              <SoundOutlined
-                style={{ paddingTop: 10 }}
-                onClick={() => {
-                  speechSynthesis.speak(new SpeechSynthesisUtterance(word));
-                }}
-              />
-            </Space>
-          </p>
-          {/* 使用可选链 (Optional Chaining) */}
-          {translationsArr?.map((item, index) => (
-            <p
-              style={{ fontSize: 20, fontWeight: 300, color: "#333" }}
-              key={index}
-            >
-              {item.translation}{" "}
-              <span style={{ color: "#1e293b" }}>{item.type}</span>
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: 22, fontWeight: 500 }}>{word}</p>
+            <p style={{ fontSize: 20, fontWeight: 300, color: "#64748b" }}>
+              <Space>
+                [{phonetic}]
+                <SoundOutlined
+                  style={{ paddingTop: 10 }}
+                  onClick={() => {
+                    speechSynthesis.speak(new SpeechSynthesisUtterance(word));
+                  }}
+                />
+              </Space>
             </p>
-          ))}
-          <Divider />
-          {sentencesArr?.map((item, index) => (
-            <p key={index}>
-              <p style={{ fontSize: 22, fontWeight: 300, color: "#1e293b" }}>
-                {item.sentence}
+            {/* 使用可选链 (Optional Chaining) */}
+            {translationsArr?.map((item, index) => (
+              <p
+                style={{ fontSize: 20, fontWeight: 300, color: "#333" }}
+                key={index}
+              >
+                {item.translation}{" "}
+                <span style={{ color: "#1e293b" }}>{item.type}</span>
               </p>
-              <p style={{ fontSize: 20, fontWeight: 300, color: "#333" }}>
-                {item.translation}
+            ))}
+            <Divider />
+            {sentencesArr?.map((item, index) => (
+              <p key={index}>
+                <p style={{ fontSize: 22, fontWeight: 300, color: "#1e293b" }}>
+                  {item.sentence}
+                </p>
+                <p style={{ fontSize: 20, fontWeight: 300, color: "#333" }}>
+                  {item.translation}
+                </p>
               </p>
-            </p>
-          ))}
+            ))}
+          </div>
         </Card>
       </div>
     </>
