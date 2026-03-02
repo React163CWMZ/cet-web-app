@@ -1,5 +1,6 @@
 import { Space } from "antd";
 import { Link, useLocation } from "react-router-dom";
+import SettingsForm from "../components/SettingsForm";
 
 const Setting = () => {
   // const navigate = useNavigate();
@@ -29,6 +30,7 @@ const Setting = () => {
       </Space>
 
       <p>致力于解决单词复习时间点的问题，给您制定完美的学习计划</p>
+      <SettingsForm />
     </div>
   );
 };

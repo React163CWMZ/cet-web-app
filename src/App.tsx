@@ -107,6 +107,7 @@ const App: React.FC = () => {
   const groupRef = useRef<number>(1);
   const schemeBriefDbRef = useRef(useLocalforageDb("MyDb", "schemeBrief"));
   const bookRef = useRef<string>("");
+  const soundValueRef = useRef<string>("on");
 
   const [wordIndex, setWordIndex] = useState<number>(1); // 定义状态
   const [word, setWord] = useState<string>("");
@@ -209,12 +210,14 @@ const App: React.FC = () => {
         // let utteranceWord = new SpeechSynthesisUtterance(storedData["word"]),
         //   utteranceWord.lang = "en-US"
         //   utteranceWord.volume = 1;
-        setTimeout(() => {
-          //发音
-          speechSynthesis.speak(
-            new SpeechSynthesisUtterance(storedData["word"]),
-          );
-        }, 500);
+        if (soundValueRef.current == "on") {
+          setTimeout(() => {
+            //发音
+            speechSynthesis.speak(
+              new SpeechSynthesisUtterance(storedData["word"]),
+            );
+          }, 500);
+        }
 
         setTimeout(() => {
           setNextOneDisable(false);
@@ -274,12 +277,14 @@ const App: React.FC = () => {
         // let utteranceWord = new SpeechSynthesisUtterance(storedData["word"]),
         //   utteranceWord.lang = "en-US"
         //   utteranceWord.volume = 1;
-        setTimeout(() => {
-          //发音
-          speechSynthesis.speak(
-            new SpeechSynthesisUtterance(storedData["word"]),
-          );
-        }, 500);
+        if (soundValueRef.current == "on") {
+          setTimeout(() => {
+            //发音
+            speechSynthesis.speak(
+              new SpeechSynthesisUtterance(storedData["word"]),
+            );
+          }, 500);
+        }
 
         setTimeout(() => {
           setPreOneDisable(false);
@@ -306,6 +311,15 @@ const App: React.FC = () => {
     getOneData(schemeBriefDbRef.current).then((scheme) => {
       if (scheme) {
         bookRef.current = (scheme as SchemeBrief)["book"] as string;
+      }
+    });
+
+    getOneDataByKey(configDbRef.current, "sound-config").then((value) => {
+      if (typeof value === "string") {
+        soundValueRef.current = value;
+      } else {
+        //empty , default sound is on
+        soundValueRef.current = "on";
       }
     });
 
@@ -487,7 +501,7 @@ const App: React.FC = () => {
               </p>
             ))}
             <Divider />
-            {sentencesArr?.map((item, index) => (
+            {sentencesArr?.slice(0, 2).map((item, index) => (
               <p key={index}>
                 <p style={{ fontSize: 22, fontWeight: 300, color: "#1e293b" }}>
                   {item.sentence}

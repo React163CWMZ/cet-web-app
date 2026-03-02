@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import useLocalforageDb, {
   getOneDataByKey,
   getOneData,
+  setOneDataByKey,
 } from "../utils/useLocalforageDb";
 
 interface projConfig {
