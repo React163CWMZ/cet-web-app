@@ -14,8 +14,9 @@ import { SoundOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import useLocalforageDb, {
   getOneData,
   getOneDataByKey,
+  getAllDataFromStore,
 } from "./utils/useLocalforageDb.ts";
-import { getAllDataFromStore, isArrayNonEmpty } from "./utils/arrayFunc.ts";
+import { isArrayNonEmpty } from "./utils/arrayFunc.ts";
 
 const { Title } = Typography;
 

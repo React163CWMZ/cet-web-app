@@ -70,6 +70,29 @@ export async function saveListData<T>(Db: LocalForage, list: T[]) {
   }
 }
 
+// read from db, save to array
+export async function getAllDataFromStore<T>(Db: LocalForage): Promise<T[]> {
+  const dataArray: T[] = [];
+  // throw new Error("xxcccdata");
+  try {
+    // 方法一：使用 iterate (推荐，效率高)
+    // iterate 接收回调函数，遍历所有键值对
+    await Db.iterate((value: T) => {
+      // 将每一条数据构造成对象，推入数组
+
+      dataArray.push(value);
+
+      // 注意：在 iterate 中不能使用 return 来中断（除非抛出异常），它是同步遍历
+    });
+
+    // console.log("获取到的数据数组:", dataArray);
+    return dataArray;
+  } catch (err) {
+    console.error("读取数据失败:", err);
+    throw new Error((err as Error).message);
+  }
+}
+
 // 清空 store 下的所有数据
 export async function clearStore(Db: LocalForage) {
   try {

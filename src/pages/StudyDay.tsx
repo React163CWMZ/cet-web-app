@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import dayjs from "dayjs";
 import StudyTaskCard from "../components/StudyTaskCard";
-import useLocalforageDb, { getOneData } from "../utils/useLocalforageDb";
+import useLocalforageDb, {
+  getOneData,
+  getAllDataFromStore,
+} from "../utils/useLocalforageDb";
 import { getReviewDates } from "../utils/studyCommon";
 import { Space } from "antd";
 import { Link, useLocation } from "react-router-dom";
@@ -11,6 +14,13 @@ interface StudyItem {
   id: string;
   title: string;
   learnDate: string; // 格式：YYYY-MM-DD
+}
+
+interface ReviewItem {
+  id: string;
+  studyId: string;
+  title: string;
+  reviewDate: string; // 格式：YYYY-MM-DD
 }
 
 interface SchemeBrief {
@@ -31,11 +41,22 @@ const StudyDay = () => {
 
   const [selectedLearn, setSelectedLearn] = useState<StudyItem[]>([]);
   const [selectedReview, setSelectedReview] = useState<StudyItem[]>([]);
+
+  const [nextLearn, setNextLearn] = useState<StudyItem | null>(null);
+  const [nextReview, setNextReview] = useState<ReviewItem[]>([]);
+  // next learnDate or reviewDate
+  const [nextFirstFutureDate, setNextFirstFutureDate] = useState<string>("");
+
   // 选中日期状态;默认是今天
   const [selectedDay] = useState<string>(dayjs().format("YYYY-MM-DD"));
 
   const mySchemeBriefRef = useRef<SchemeBrief>(null);
-  const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "SchemeBrief"));
+  const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "schemeBrief"));
+
+  // 新增：用ref存储数据库实例，避免重复初始化
+  const userSchemeDbRef = useRef(useLocalforageDb("MyDb", "userScheme"));
+  const reviewSchemeDbRef = useRef(useLocalforageDb("MyDb", "reviewScheme"));
+
   try {
     getOneData(SchemeBriefDbRef.current).then((data) => {
       if (data) {
@@ -46,45 +67,112 @@ const StudyDay = () => {
     // pop windows , prompt try again
   }
 
-  // 新增：用ref存储数据库实例，避免重复初始化
-  const userSchemeDbRef = useRef(useLocalforageDb("MyDb", "userScheme"));
+  /**
+   * 找到比今天更晚的第一个 learnDate 对应的数组项
+   * @param items 单词列表
+   * @returns 第一个未来的项，没有则返回 null
+   */
+  function findLearnFirstFutureItem(items: StudyItem[]): StudyItem | null {
+    // 获取今天的日期（不包含时分秒）
+    const today = dayjs().startOf("day");
 
-  async function getSchemeData(Db: LocalForage) {
-    const result: StudyItem[] = [];
-    try {
-      await Db.iterate((values: StudyItem) => {
-        result.push(values);
-      });
-      return result; // 数据拿到后再执行后续逻辑
-    } catch (err) {
-      console.error("读取失败", err);
-    }
+    return (
+      items
+        // 1. 过滤：只保留 learnDate 严格大于今天的项
+        .filter((item) => dayjs(item.learnDate).isAfter(today))
+        // 2. 排序：按日期升序（最近的排在前面）
+        .sort((a, b) => dayjs(a.learnDate).diff(dayjs(b.learnDate)))
+        // 3. 取第一个
+        .at(0) || null
+    );
+  }
+
+  /**
+   * 找到比今天更晚的第一个 reviewDate 对应的数组项
+   * @param items 单词列表
+   * @returns 第一个未来的项，没有则返回 null
+   */
+  function findReviewFirstFutureItem(items: ReviewItem[]): ReviewItem | null {
+    // 获取今天的日期（不包含时分秒）
+    const today = dayjs().startOf("day");
+
+    return (
+      items
+        // 1. 过滤：只保留 learnDate 严格大于今天的项
+        .filter((item) => dayjs(item.reviewDate).isAfter(today))
+        // 2. 排序：按日期升序（最近的排在前面）
+        .sort((a, b) => dayjs(a.reviewDate).diff(dayjs(b.reviewDate)))
+        // 3. 取第一个
+        .at(0) || null
+    );
   }
 
   useEffect(() => {
-    // 每天学习数据的构造
-    let schemeArr: StudyItem[] = [];
+    const pageInit = async () => {
+      // 每天学习数据的构造
+      let schemeArr: StudyItem[] = [];
+      let reviewArr: ReviewItem[] = [];
 
-    // get scheme from db
-    getSchemeData(userSchemeDbRef.current).then((data) => {
-      if (data) {
-        schemeArr = data;
+      try {
+        // get scheme from db
+        schemeArr = await getAllDataFromStore<StudyItem>(
+          userSchemeDbRef.current,
+        )
+          .then((data) => {
+            // 计算选中日期的任务
+            setSelectedLearn(
+              data.filter((item) => item.learnDate === selectedDay),
+            );
 
-        // setSelectedDay(dayjs().format("YYYY-MM-DD"));
-        // 计算选中日期的任务
-        setSelectedLearn(
-          schemeArr.filter((item) => item.learnDate === selectedDay),
-        );
-
-        setSelectedReview(
-          schemeArr.filter((item) =>
-            new Set(getReviewDates(item.learnDate)).has(selectedDay),
-          ),
-        );
-      } else {
-        // throw new error
+            setSelectedReview(
+              data.filter((item) =>
+                new Set(getReviewDates(item.learnDate)).has(selectedDay),
+              ),
+            );
+            return data;
+          })
+          .catch((err) => {
+            // getAllDataFromStore() throw Error, will be caught here, not deal, throw to upper deal
+            console.log("123123", err.message);
+            throw new Error(err.message);
+          });
+      } catch (err) {
+        // console.log("7777", (err as Error).message);
+        // tip user data except
       }
-    });
+
+      let nextLearn = findLearnFirstFutureItem(schemeArr);
+      setNextLearn(nextLearn);
+      // console.log(schemeArr, nextLearn);
+      try {
+        // get scheme from db
+        reviewArr = await getAllDataFromStore<ReviewItem>(
+          reviewSchemeDbRef.current,
+        );
+      } catch (err) {
+        // console.log("7878", (err as Error).message);
+        // tip user data except
+      }
+
+      let reviewFirstFutureDate = findReviewFirstFutureItem(reviewArr);
+
+      let reviewFirstFutureDateArr: ReviewItem[] = [];
+      // console.log(reviewArr, reviewFirstFutureDate);
+      // reviewFirstFutureDate == null, reviewFirstFutureDate is undefined or null
+      if (reviewFirstFutureDate != null) {
+        reviewFirstFutureDateArr = reviewArr.filter(
+          (item) => item.reviewDate === reviewFirstFutureDate?.reviewDate,
+        );
+        // no learnDate ,also has reviewDate, if reviewDate is not exist, scheme is already end。
+        setNextFirstFutureDate(reviewFirstFutureDate["reviewDate"]);
+      }
+      setNextReview(reviewFirstFutureDateArr);
+      // console.log("1221", reviewFirstFutureDateArr);
+
+      // task all complete，last day ，and later
+    };
+
+    pageInit();
   }, []);
 
   // // 获取昨天的日期
@@ -128,12 +216,12 @@ const StudyDay = () => {
           display: "flex",
           marginBottom: 20,
           justifyContent: "space-between",
-          fontSize: "18px",
+          fontSize: 20,
           fontWeight: 500,
         }}
       >
         {location.pathname === "/daytask" ? (
-          <span style={{ color: "#1e293b" }}>学习日程</span>
+          <span style={{ color: "#1e293b", fontWeight: 600 }}>学习日程</span>
         ) : (
           <Link to="/daytask">学习日程</Link>
         )}
@@ -143,11 +231,39 @@ const StudyDay = () => {
       <Space
         orientation="horizontal"
         size="large"
-        style={{ display: "flex", marginBottom: 20, color: "#334155" }}
+        style={{
+          display: "flex",
+          marginBottom: 20,
+          fontSize: 18,
+          color: "#334155",
+        }}
       >
-        <span>📅 学习计划：{mySchemeBriefRef.current?.book}</span>
+        <span>学习计划：{mySchemeBriefRef.current?.book}</span>
         <span>开始日期：{mySchemeBriefRef.current?.startDay}</span>
         <span>预计天数：{mySchemeBriefRef.current?.groupNums} 天</span>
+      </Space>
+
+      <Space
+        orientation="horizontal"
+        size="large"
+        style={{
+          display: "flex",
+          marginBottom: 20,
+          fontSize: 20,
+          color: "#f97316",
+        }}
+      >
+        {nextFirstFutureDate && (
+          <>
+            <span>下次学习日期：{nextFirstFutureDate}</span>
+            {nextLearn ? <span>有1个学习任务</span> : <span></span>}
+            {nextReview.length > 0 ? (
+              <span>有{nextReview.length}个复习任务</span>
+            ) : (
+              <span></span>
+            )}
+          </>
+        )}
       </Space>
 
       <div style={{ display: "flex", gap: 20 }}>

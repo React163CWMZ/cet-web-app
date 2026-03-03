@@ -25,7 +25,7 @@ const EbbinghausCalendar: React.FC<SchemeBrief> = () => {
 
   const [schemeList, setSchemeList] = useState<StudyItem[]>([]);
   // let mySchemeBrief: SchemeBrief | null = null;
-  const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "SchemeBrief"));
+  const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "schemeBrief"));
   try {
     getOneData(SchemeBriefDbRef.current).then((data) => {
       if (data) {

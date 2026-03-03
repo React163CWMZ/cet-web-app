@@ -37,7 +37,7 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
 
   return (
     <Card
-      title={`📌 ${selectedDay} 任务`}
+      title={`${selectedDay} 任务`}
       style={{ width: "100%" }}
       styles={{
         header: {
