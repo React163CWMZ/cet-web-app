@@ -4,19 +4,7 @@ import { useNavigate } from "react-router-dom";
 import useLocalforageDb, {
   getOneDataByKey,
   getOneData,
-  setOneDataByKey,
 } from "../utils/useLocalforageDb";
-
-interface projConfig {
-  hasInit: boolean;
-}
-interface SchemeBrief {
-  key?: string;
-  book?: string;
-  wordsGroup: number;
-  groupNums: number;
-  startDay?: string;
-}
 
 const Guide = () => {
   const navigate = useNavigate();

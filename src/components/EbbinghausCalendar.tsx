@@ -3,7 +3,10 @@ import { Calendar, Badge } from "antd";
 import type { CalendarProps } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 import StudyTaskCard from "./StudyTaskCard";
-import useLocalforageDb, { getOneData } from "../utils/useLocalforageDb";
+import useLocalforageDb, {
+  getOneData,
+  getAllDataFromStore,
+} from "../utils/useLocalforageDb";
 import { getReviewDates } from "../utils/studyCommon";
 
 // study scheme 类型定义
@@ -15,8 +18,18 @@ interface StudyItem {
   isFinish: boolean;
 }
 
+interface ReviewItem {
+  db_key: string;
+  id: string;
+  studyId: string;
+  title: string;
+  reviewDate: string; // 格式：YYYY-MM-DD
+  isFinish: boolean;
+}
+
 interface SchemeBrief {
-  book: string;
+  key?: string;
+  book?: string;
   wordsGroup: number;
   groupNums: number;
   startDay?: string;
@@ -28,6 +41,8 @@ const EbbinghausCalendar: React.FC<SchemeBrief> = () => {
   const [schemeList, setSchemeList] = useState<StudyItem[]>([]);
   // let mySchemeBrief: SchemeBrief | null = null;
   const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "schemeBrief"));
+  const userSchemeDbRef = useRef(useLocalforageDb("MyDb", "userScheme"));
+  const reviewSchemeDbRef = useRef(useLocalforageDb("MyDb", "reviewScheme"));
   try {
     getOneData(SchemeBriefDbRef.current).then((data) => {
       if (data) {
@@ -36,21 +51,6 @@ const EbbinghausCalendar: React.FC<SchemeBrief> = () => {
     });
   } catch (err) {
     // pop windows , prompt try again
-  }
-
-  // 新增：用ref存储数据库实例，避免重复初始化
-  const userSchemeDbRef = useRef(useLocalforageDb("MyDb", "userScheme"));
-
-  async function getSchemeData(Db: LocalForage) {
-    const result: StudyItem[] = [];
-    try {
-      await Db.iterate((values: StudyItem) => {
-        result.push(values);
-      });
-      return result; // 数据拿到后再执行后续逻辑
-    } catch (err) {
-      console.error("读取失败", err);
-    }
   }
 
   // 日历单元格渲染逻辑
@@ -109,32 +109,49 @@ const EbbinghausCalendar: React.FC<SchemeBrief> = () => {
     dayjs().format("YYYY-MM-DD"),
   );
   const [selectedLearn, setSelectedLearn] = useState<StudyItem[]>([]);
-  const [selectedReview, setSelectedReview] = useState<StudyItem[]>([]);
+  const [selectedReview, setSelectedReview] = useState<ReviewItem[]>([]);
 
   useEffect(() => {
-    // 获取学习scheme数据
-    let schemeArr: StudyItem[] = [];
+    const pageInit = async () => {
+      // 获取学习scheme数据
+      let schemeArr: StudyItem[] = [];
 
-    // get scheme from db
-    getSchemeData(userSchemeDbRef.current).then((data) => {
-      if (data) {
-        schemeArr = data;
+      let reviewArr: ReviewItem[] = [];
+
+      try {
+        // get scheme from db
+        schemeArr = await getAllDataFromStore<StudyItem>(
+          userSchemeDbRef.current,
+        );
         setSchemeList(schemeArr);
-        // 计算选中日期的任务
+        // get today learn
         setSelectedLearn(
           schemeArr.filter((item) => item.learnDate === selectedDay),
         );
-
-        setSelectedReview(
-          schemeArr.filter((item) =>
-            new Set(getReviewDates(item.learnDate)).has(selectedDay),
-          ),
-        );
-      } else {
-        // throw new error
+      } catch (err) {
+        console.log("7777", (err as Error).message);
+        // tip user data except
       }
-    });
-  }, [userSchemeDbRef, selectedDay]);
+
+      // console.log(schemeArr, nextLearn);
+      try {
+        // get scheme from db
+        reviewArr = await getAllDataFromStore<ReviewItem>(
+          reviewSchemeDbRef.current,
+        );
+
+        // get today review
+        setSelectedReview(
+          reviewArr.filter((item) => item.reviewDate === selectedDay),
+        );
+      } catch (err) {
+        console.log("7878", (err as Error).message);
+        // tip user data except
+      }
+    };
+
+    pageInit();
+  }, [userSchemeDbRef, reviewSchemeDbRef, selectedDay]);
 
   // 页面布局
   return (

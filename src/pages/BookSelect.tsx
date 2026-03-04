@@ -31,7 +31,7 @@ import {
 
 import { getReviewDates } from "../utils/studyCommon";
 
-import axios, { all } from "axios";
+import axios from "axios";
 
 const { Title } = Typography;
 

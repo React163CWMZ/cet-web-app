@@ -4,7 +4,6 @@ import StudyTaskCard from "../components/StudyTaskCard";
 import useLocalforageDb, {
   getOneData,
   getAllDataFromStore,
-  getOneDataByKey,
 } from "../utils/useLocalforageDb";
 import { Space } from "antd";
 import { Link, useLocation } from "react-router-dom";
