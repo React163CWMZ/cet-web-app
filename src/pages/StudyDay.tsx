@@ -127,7 +127,7 @@ const StudyDay = () => {
           schemeArr.filter((item) => item.learnDate === selectedDay),
         );
       } catch (err) {
-        // console.log("7777", (err as Error).message);
+        console.log("7777", (err as Error).message);
         // tip user data except
       }
 
@@ -139,6 +139,7 @@ const StudyDay = () => {
         reviewArr = await getAllDataFromStore<ReviewItem>(
           reviewSchemeDbRef.current,
         );
+
         // get today review
         setSelectedReview(
           reviewArr.filter((item) => item.reviewDate === selectedDay),
@@ -163,13 +164,13 @@ const StudyDay = () => {
       setNextReview(reviewFirstFutureDateArr);
       // console.log("1221", reviewFirstFutureDateArr);
 
-      setTimeout(() => {
-        console.log("xxxxxxx", selectedLearn, selectedReview);
-
-        getOneDataByKey(reviewSchemeDbRef.current, "4").then((value) =>
-          console.log(value),
-        );
-      }, 2000);
+      // setTimeout(() => {
+      //   // console.log("xxxxxxx", selectedLearn, selectedReview);
+      //   console.log("222", reviewArr);
+      //   getOneDataByKey(reviewSchemeDbRef.current, "9").then((value) =>
+      //     console.log(value),
+      //   );
+      // }, 2000);
 
       // task all complete，last day ，and later
     };
@@ -218,7 +219,7 @@ const StudyDay = () => {
           display: "flex",
           marginBottom: 20,
           justifyContent: "space-between",
-          fontSize: 20,
+          fontSize: 16,
           fontWeight: 500,
         }}
       >
@@ -235,44 +236,63 @@ const StudyDay = () => {
         size="large"
         style={{
           display: "flex",
-          marginBottom: 20,
+          marginBottom: 10,
           justifyContent: "space-between",
-          fontSize: 18,
+          fontSize: 14,
           color: "#334155",
         }}
       >
         <span>
           学习内容：
-          <br />
           {mySchemeBriefRef.current?.book}
         </span>
         <span>
           开始日期：
-          <br />
           {mySchemeBriefRef.current?.startDay}
         </span>
-
+      </Space>
+      <Space
+        orientation="horizontal"
+        size="small"
+        style={{
+          display: "flex",
+          marginBottom: 20,
+          justifyContent: "space-between",
+          fontSize: 14,
+          color: "#334155",
+        }}
+      >
         <span>
           每天学习：
-          <br />
           {mySchemeBriefRef.current?.wordsGroup}个
         </span>
         <span>
           预计天数：
-          <br />
           {mySchemeBriefRef.current?.groupNums &&
             mySchemeBriefRef.current?.groupNums + 21}
           天
         </span>
       </Space>
 
+      <div style={{ display: "flex", gap: 20 }}>
+        {/* 右侧任务卡片（子组件） */}
+        <div style={{ flex: 1 }}>
+          <StudyTaskCard
+            isActive={true}
+            selectedDay={selectedDay}
+            learnTasks={selectedLearn}
+            reviewTasks={selectedReview}
+          />
+        </div>
+      </div>
+
       <Space
         orientation="horizontal"
         size="large"
         style={{
           display: "flex",
-          marginBottom: 20,
-          fontSize: 20,
+          marginTop: 20,
+          fontSize: 14,
           color: "#f97316",
         }}
       >
@@ -288,18 +308,6 @@ const StudyDay = () => {
           </>
         )}
       </Space>
-
-      <div style={{ display: "flex", gap: 20 }}>
-        {/* 右侧任务卡片（子组件） */}
-        <div style={{ flex: 1 }}>
-          <StudyTaskCard
-            isActive={true}
-            selectedDay={selectedDay}
-            learnTasks={selectedLearn}
-            reviewTasks={selectedReview}
-          />
-        </div>
-      </div>
     </div>
   );
 };

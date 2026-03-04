@@ -248,13 +248,15 @@ const App: React.FC = () => {
             studyKeyRef.current["db_key"],
           )
             .then((value) => {
-              if (typeof value == "object") {
-                console.log({ ...value, isFinish: true });
-                setOneDataByKey(
-                  userSchemeDbRef.current,
-                  studyKeyRef.current["db_key"],
-                  { ...value, isFinish: true },
-                );
+              // console.log({ ...value, isFinish: true });
+              if (value && typeof value === "object" && "isFinish" in value) {
+                if (value["isFinish"] === false) {
+                  setOneDataByKey(
+                    userSchemeDbRef.current,
+                    studyKeyRef.current["db_key"],
+                    { ...value, isFinish: true },
+                  );
+                }
               }
             })
             .catch((err) => {
@@ -268,13 +270,15 @@ const App: React.FC = () => {
             studyKeyRef.current["db_key"],
           )
             .then((value) => {
-              if (typeof value == "object") {
-                console.log({ ...value, isFinish: true });
-                setOneDataByKey(
-                  reviewSchemeDbRef.current,
-                  studyKeyRef.current["db_key"],
-                  { ...value, isFinish: true },
-                );
+              // console.log({ ...value, isFinish: true });
+              if (value && typeof value === "object" && "isFinish" in value) {
+                if (value["isFinish"] === false) {
+                  setOneDataByKey(
+                    reviewSchemeDbRef.current,
+                    studyKeyRef.current["db_key"],
+                    { ...value, isFinish: true },
+                  );
+                }
               }
             })
             .catch((err) => {
@@ -415,159 +419,150 @@ const App: React.FC = () => {
 
   return (
     <>
-      <div
-        style={{
-          height: "90vh",
-          padding: 16,
-          overflow: "hidden",
-          boxSizing: "border-box",
+      {contextHolder}
+      <Modal
+        title="恭喜完成"
+        okText="确定"
+        cancelText="取消"
+        closable={{ "aria-label": "Custom Close Button" }}
+        open={isModalOpen}
+        onOk={handleOk}
+        onCancel={handleCancel}
+      >
+        <Divider />
+        <p>继续下一个小组学习</p>
+      </Modal>
+      <Modal
+        title="筛选简单的单词"
+        okText="确定"
+        cancelText="取消"
+        closable={{ "aria-label": "Custom Close Button" }}
+        open={isFilterWordModalOpen}
+        onOk={filterWordHandleOk}
+        onCancel={filterWordhandleCancel}
+        styles={{
+          header: {},
+          body: {},
         }}
       >
-        {contextHolder}
-        <Modal
-          title="恭喜完成"
-          okText="确定"
-          cancelText="取消"
-          closable={{ "aria-label": "Custom Close Button" }}
-          open={isModalOpen}
-          onOk={handleOk}
-          onCancel={handleCancel}
-        >
-          <Divider />
-          <p>继续下一个小组学习</p>
-        </Modal>
-        <Modal
-          title="筛选简单的单词"
-          okText="确定"
-          cancelText="取消"
-          closable={{ "aria-label": "Custom Close Button" }}
-          open={isFilterWordModalOpen}
-          onOk={filterWordHandleOk}
-          onCancel={filterWordhandleCancel}
-          styles={{
-            header: {},
-            body: {},
-          }}
-        >
-          <Divider />
-          <p>比如in、of、book、for、with等熟悉的单词</p>
-          <p>对于别人难，但是你已经掌握的单词</p>
-          <p>选中这些单词就不会出现，建议首次学习筛选</p>
-        </Modal>
-        <Modal
-          title="确定放弃本次学习吗？"
-          okText="确定"
-          cancelText="取消"
-          closable={{ "aria-label": "Custom Close Button" }}
-          open={isCloseModalOpen}
-          onOk={closeHandleOk}
-          onCancel={closeHandleCancel}
-          styles={{
-            header: {},
-            body: {},
-          }}
-        >
-          <Divider />
-          <p>坚持比放弃多一划，所以坚持比放弃更难一些。</p>
-        </Modal>
-        <Card
-          title={
-            <>
-              <Space>
-                <CloseCircleOutlined onClick={showCloseModal} />
-                {bookRef.current}
-              </Space>
-            </>
-          }
-          extra={
-            <>
-              <Button onClick={showFilterWordModal}>筛选</Button>
-            </>
-          }
-          actions={[
-            // 通常放按钮或带点击事件的元素
-            <Button
-              type="primary"
-              key="pre"
-              onClick={preOne}
-              disabled={preOneDisable}
-            >
-              上一个
-            </Button>,
-            <Button
-              type="primary"
-              key="next"
-              disabled={nextOneDisable}
-              onClick={nextOne}
-            >
-              下一个
-            </Button>,
-          ]}
-          style={{
-            width: "100%",
-            height: "80vh",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-            borderColor: "#4096FF",
+        <Divider />
+        <p>比如in、of、book、for、with等熟悉的单词</p>
+        <p>对于别人难，但是你已经掌握的单词</p>
+        <p>选中这些单词就不会出现，建议首次学习筛选</p>
+      </Modal>
+      <Modal
+        title="确定放弃本次学习吗？"
+        okText="确定"
+        cancelText="取消"
+        closable={{ "aria-label": "Custom Close Button" }}
+        open={isCloseModalOpen}
+        onOk={closeHandleOk}
+        onCancel={closeHandleCancel}
+        styles={{
+          header: {},
+          body: {},
+        }}
+      >
+        <Divider />
+        <p>坚持比放弃多一划，所以坚持比放弃更难一些。</p>
+      </Modal>
+      <Card
+        title={
+          <>
+            <Space>
+              <CloseCircleOutlined onClick={showCloseModal} />
+              {bookRef.current}
+            </Space>
+          </>
+        }
+        extra={
+          <>
+            <Button onClick={showFilterWordModal}>筛选</Button>
+          </>
+        }
+        actions={[
+          // 通常放按钮或带点击事件的元素
+          <Button
+            type="primary"
+            key="pre"
+            onClick={preOne}
+            disabled={preOneDisable}
+          >
+            上一个
+          </Button>,
+          <Button
+            type="primary"
+            key="next"
+            disabled={nextOneDisable}
+            onClick={nextOne}
+          >
+            下一个
+          </Button>,
+        ]}
+        style={{
+          width: "100%",
+          height: "98vh",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          borderColor: "#4096FF",
+          backgroundColor: "#E6F4FF",
+        }}
+        // ✅ 新版 antd 推荐：用 styles 代替 bodyStyle
+        styles={{
+          header: {
+            background: "#4096FF", // 顶部蓝色
+            color: "#fafafa",
+            fontSize: "16px",
+            fontWeight: 500,
+          },
+          body: {
+            flex: 1,
+            overflowY: "auto", // 内容内部滚动
+            padding: "16",
+          },
+          actions: {
             backgroundColor: "#E6F4FF",
-          }}
-          // ✅ 新版 antd 推荐：用 styles 代替 bodyStyle
-          styles={{
-            header: {
-              background: "#4096FF", // 顶部蓝色
-              color: "#fafafa",
-              fontSize: "16px",
-              fontWeight: 500,
-            },
-            body: {
-              flex: 1,
-              overflowY: "auto", // 内容内部滚动
-              padding: "16",
-            },
-            actions: {
-              backgroundColor: "#E6F4FF",
-              borderTop: "1px solid #e8e8e8",
-            },
-          }}
-        >
-          <div style={{ textAlign: "center" }}>
-            <p style={{ fontSize: 22, fontWeight: 500 }}>{word}</p>
-            <p style={{ fontSize: 20, fontWeight: 300, color: "#64748b" }}>
-              <Space>
-                [{phonetic}]
-                <SoundOutlined
-                  style={{ paddingTop: 10 }}
-                  onClick={() => {
-                    speechSynthesis.speak(new SpeechSynthesisUtterance(word));
-                  }}
-                />
-              </Space>
+            borderTop: "1px solid #e8e8e8",
+          },
+        }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <p style={{ fontSize: 22, fontWeight: 500 }}>{word}</p>
+          <p style={{ fontSize: 20, fontWeight: 300, color: "#64748b" }}>
+            <Space>
+              [{phonetic}]
+              <SoundOutlined
+                style={{ paddingTop: 10 }}
+                onClick={() => {
+                  speechSynthesis.speak(new SpeechSynthesisUtterance(word));
+                }}
+              />
+            </Space>
+          </p>
+          {/* 使用可选链 (Optional Chaining) */}
+          {translationsArr?.map((item, index) => (
+            <p
+              style={{ fontSize: 20, fontWeight: 300, color: "#333" }}
+              key={index}
+            >
+              {item.translation}{" "}
+              <span style={{ color: "#1e293b" }}>{item.type}</span>
             </p>
-            {/* 使用可选链 (Optional Chaining) */}
-            {translationsArr?.map((item, index) => (
-              <p
-                style={{ fontSize: 20, fontWeight: 300, color: "#333" }}
-                key={index}
-              >
-                {item.translation}{" "}
-                <span style={{ color: "#1e293b" }}>{item.type}</span>
+          ))}
+          <Divider />
+          {sentencesArr?.slice(0, 2).map((item, index) => (
+            <div key={index}>
+              <p style={{ fontSize: 18, fontWeight: 300, color: "#1e293b" }}>
+                {item.sentence}
               </p>
-            ))}
-            <Divider />
-            {sentencesArr?.slice(0, 2).map((item, index) => (
-              <div key={index}>
-                <p style={{ fontSize: 22, fontWeight: 300, color: "#1e293b" }}>
-                  {item.sentence}
-                </p>
-                <p style={{ fontSize: 20, fontWeight: 300, color: "#333" }}>
-                  {item.translation}
-                </p>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+              <p style={{ fontSize: 16, fontWeight: 300, color: "#333" }}>
+                {item.translation}
+              </p>
+            </div>
+          ))}
+        </div>
+      </Card>
     </>
   );
 };

@@ -60,7 +60,10 @@ export async function saveListData<T>(Db: LocalForage, list: T[]) {
   try {
     await Promise.all(
       list.map((value, index) => {
-        return Db.setItem((index + 1).toString(), value);
+        return Db.setItem((index + 1).toString(), {
+          ...value,
+          db_key: (index + 1).toString(),
+        });
       }),
     );
     console.log("导入成功！");
@@ -77,9 +80,9 @@ export async function getAllDataFromStore<T>(Db: LocalForage): Promise<T[]> {
   try {
     // 方法一：使用 iterate (推荐，效率高)
     // iterate 接收回调函数，遍历所有键值对
-    await Db.iterate((value: T, key: string) => {
+    await Db.iterate((value: T) => {
       // 将每一条数据构造成对象，推入数组，存入db_key,for update
-      dataArray.push({ ...value, db_key: key });
+      dataArray.push(value);
 
       // 注意：在 iterate 中不能使用 return 来中断（除非抛出异常），它是同步遍历
     });

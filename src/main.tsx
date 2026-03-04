@@ -5,6 +5,7 @@ import { browserRouter } from "./router";
 import dayjs from "dayjs";
 import "dayjs/locale/zh-cn";
 dayjs.locale("zh-cn");
+// import "./App.css";
 // React 引入样式示例
 import "antd/dist/antd.css";
 // import App from "./App.tsx";
