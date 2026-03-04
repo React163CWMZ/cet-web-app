@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import dayjs from "dayjs";
 import {
@@ -14,12 +14,13 @@ import {
   Spin,
 } from "antd";
 
-import { BookOutlined } from "@ant-design/icons";
+import { BookOutlined, LeftOutlined } from "@ant-design/icons";
 import "./BookSelect.css";
 
 import useLocalforageDb, {
   getOneDataByKey,
   setOneDataByKey,
+  getOneData,
 } from "../utils/useLocalforageDb";
 
 import { arrayShuffle, isArrayNonEmpty } from "../utils/arrayFunc";
@@ -94,6 +95,7 @@ type DailyCount = 20 | 30 | 40 | 50 | 60 | 70 | 80 | 100;
 const BookSelect = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [hasScheme, setHasScheme] = useState(false);
 
   // 新增：用ref存储数据库实例，避免重复初始化
   const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
@@ -103,9 +105,10 @@ const BookSelect = () => {
   const cet6DbRef = useRef(useLocalforageDb("MyDb", "cet6Store"));
   const kaoyanDbRef = useRef(useLocalforageDb("MyDb", "kaoyanStore"));
   const wordGroupDbRef = useRef(useLocalforageDb("MyDb", "wordGroup"));
-  const SchemeBriefDbRef = useRef(useLocalforageDb("MyDb", "schemeBrief"));
+  const schemeBriefDbRef = useRef(useLocalforageDb("MyDb", "schemeBrief"));
   const userSchemeDbRef = useRef(useLocalforageDb("MyDb", "userScheme"));
   const reviewSchemeDbRef = useRef(useLocalforageDb("MyDb", "reviewScheme"));
+
   // read from db, save to array
   async function getAllDataFromStore(Db: LocalForage) {
     const dataArray: groupWord[] = [];
@@ -158,37 +161,47 @@ const BookSelect = () => {
     if (item["key"] === "junior") {
       // console.log(item);
       getAllDataFromStore(juniorDbRef.current).then((data) => {
-        if (data) {
+        if (data && isArrayNonEmpty(data)) {
           setSelectedBook({ ...item, totalWords: data.length });
           setAllData(data);
+        } else {
+          bookEmptyDeal();
         }
       });
     } else if (item["key"] === "senior") {
       getAllDataFromStore(seniorDbRef.current).then((data) => {
-        if (data) {
+        if (data && isArrayNonEmpty(data)) {
           setSelectedBook({ ...item, totalWords: data.length });
           setAllData(data);
+        } else {
+          bookEmptyDeal();
         }
       });
     } else if (item["key"] === "cet4") {
       getAllDataFromStore(cet4DbRef.current).then((data) => {
-        if (data) {
+        if (data && isArrayNonEmpty(data)) {
           setSelectedBook({ ...item, totalWords: data.length });
           setAllData(data);
+        } else {
+          bookEmptyDeal();
         }
       });
     } else if (item["key"] === "cet6") {
       getAllDataFromStore(cet6DbRef.current).then((data) => {
-        if (data) {
+        if (data && isArrayNonEmpty(data)) {
           setSelectedBook({ ...item, totalWords: data.length });
           setAllData(data);
+        } else {
+          bookEmptyDeal();
         }
       });
     } else if (item["key"] === "kaoyan") {
       getAllDataFromStore(kaoyanDbRef.current).then((data) => {
-        if (data) {
+        if (data && isArrayNonEmpty(data)) {
           setSelectedBook({ ...item, totalWords: data.length });
           setAllData(data);
+        } else {
+          bookEmptyDeal();
         }
       });
     } else {
@@ -219,8 +232,8 @@ const BookSelect = () => {
 
     try {
       // clear data, then save new
-      await clearStore(SchemeBriefDbRef.current);
-      await saveOneData(SchemeBriefDbRef.current, mySchemeBrief);
+      await clearStore(schemeBriefDbRef.current);
+      await saveOneData(schemeBriefDbRef.current, mySchemeBrief);
     } catch (err) {
       // pop windows , prompt try again
       console.log("SchemeBrief", err);
@@ -274,9 +287,9 @@ const BookSelect = () => {
     await clearStore(reviewSchemeDbRef.current);
     await saveListData<ReviewItem>(reviewSchemeDbRef.current, resultArr);
 
-    message.success(
-      `已选择：${selectedBook?.title}，每天 ${dailyCount} 个，共 ${totalDays + 21} 天完成！`,
-    );
+    // message.success(
+    //   `已选择：${selectedBook?.title}，每天 ${dailyCount} 个，共 ${totalDays + 21} 天完成！`,
+    // );
 
     // 这里可以跳转到单词任务页面
     navigate("/daytask", {
@@ -311,14 +324,29 @@ const BookSelect = () => {
   }
 
   const reloadClick = () => {
-    navigate("/book", {
-      state: {
-        message: "数据初始化失败，请刷新重试！",
-      },
+    navigate("/book");
+  };
+
+  // if book is empty, set hasInit = false, go to / for reload
+  const bookEmptyDeal = async () => {
+    await setOneDataByKey(configDbRef.current, "junior-config", {
+      hasInit: false,
     });
+
+    navigate("/");
   };
 
   useEffect(() => {
+    let hasScheme: boolean = false;
+    // check if has schemeBrief data in db, if not, navigate to book select page, else navigate to daytask page.
+    getOneData(schemeBriefDbRef.current).then((scheme) => {
+      if (scheme) {
+        hasScheme = true;
+      } else {
+        hasScheme = false;
+      }
+      setHasScheme(hasScheme);
+    });
     let hasInit: boolean = false;
     getOneDataByKey(configDbRef.current, "junior-config").then((config) => {
       if (config) {
@@ -500,6 +528,23 @@ const BookSelect = () => {
   return (
     <div className="word-select-container">
       <Spin spinning={loading} fullscreen />
+
+      {hasScheme === true && (
+        <Space
+          orientation="horizontal"
+          size="large"
+          style={{
+            display: "flex",
+            marginBottom: 20,
+            justifyContent: "space-between",
+          }}
+        >
+          <Link to="/setting">
+            <LeftOutlined />
+            返回
+          </Link>
+        </Space>
+      )}
       <Space orientation="vertical" size="large" style={{ width: "100%" }}>
         <div className="title-wrapper">
           <Title level={2}>选择单词本</Title>
