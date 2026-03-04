@@ -96,7 +96,7 @@ const SettingsForm = () => {
           </Form.Item> */}
           <Form.Item label="重置" name="change">
             <Button type="link" onClick={handleResetPlan}>
-              学习计划
+              新学习计划
             </Button>
           </Form.Item>
         </Form>

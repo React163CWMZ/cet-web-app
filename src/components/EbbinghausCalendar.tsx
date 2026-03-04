@@ -8,9 +8,11 @@ import { getReviewDates } from "../utils/studyCommon";
 
 // study scheme 类型定义
 interface StudyItem {
+  db_key: string;
   id: string;
   title: string;
   learnDate: string; // 格式：YYYY-MM-DD
+  isFinish: boolean;
 }
 
 interface SchemeBrief {

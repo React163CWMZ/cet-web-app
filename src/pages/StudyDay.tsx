@@ -4,23 +4,27 @@ import StudyTaskCard from "../components/StudyTaskCard";
 import useLocalforageDb, {
   getOneData,
   getAllDataFromStore,
+  getOneDataByKey,
 } from "../utils/useLocalforageDb";
-import { getReviewDates } from "../utils/studyCommon";
 import { Space } from "antd";
 import { Link, useLocation } from "react-router-dom";
 
 // study scheme 类型定义
 interface StudyItem {
+  db_key: string;
   id: string;
   title: string;
   learnDate: string; // 格式：YYYY-MM-DD
+  isFinish: boolean;
 }
 
 interface ReviewItem {
+  db_key: string;
   id: string;
   studyId: string;
   title: string;
   reviewDate: string; // 格式：YYYY-MM-DD
+  isFinish: boolean;
 }
 
 interface SchemeBrief {
@@ -40,7 +44,7 @@ const StudyDay = () => {
   // const name: string = wordBook?.title;
 
   const [selectedLearn, setSelectedLearn] = useState<StudyItem[]>([]);
-  const [selectedReview, setSelectedReview] = useState<StudyItem[]>([]);
+  const [selectedReview, setSelectedReview] = useState<ReviewItem[]>([]);
 
   const [nextLearn, setNextLearn] = useState<StudyItem | null>(null);
   const [nextReview, setNextReview] = useState<ReviewItem[]>([]);
@@ -117,25 +121,11 @@ const StudyDay = () => {
         // get scheme from db
         schemeArr = await getAllDataFromStore<StudyItem>(
           userSchemeDbRef.current,
-        )
-          .then((data) => {
-            // 计算选中日期的任务
-            setSelectedLearn(
-              data.filter((item) => item.learnDate === selectedDay),
-            );
-
-            setSelectedReview(
-              data.filter((item) =>
-                new Set(getReviewDates(item.learnDate)).has(selectedDay),
-              ),
-            );
-            return data;
-          })
-          .catch((err) => {
-            // getAllDataFromStore() throw Error, will be caught here, not deal, throw to upper deal
-            console.log("123123", err.message);
-            throw new Error(err.message);
-          });
+        );
+        // get today learn
+        setSelectedLearn(
+          schemeArr.filter((item) => item.learnDate === selectedDay),
+        );
       } catch (err) {
         // console.log("7777", (err as Error).message);
         // tip user data except
@@ -149,8 +139,12 @@ const StudyDay = () => {
         reviewArr = await getAllDataFromStore<ReviewItem>(
           reviewSchemeDbRef.current,
         );
+        // get today review
+        setSelectedReview(
+          reviewArr.filter((item) => item.reviewDate === selectedDay),
+        );
       } catch (err) {
-        // console.log("7878", (err as Error).message);
+        console.log("7878", (err as Error).message);
         // tip user data except
       }
 
@@ -168,6 +162,14 @@ const StudyDay = () => {
       }
       setNextReview(reviewFirstFutureDateArr);
       // console.log("1221", reviewFirstFutureDateArr);
+
+      setTimeout(() => {
+        console.log("xxxxxxx", selectedLearn, selectedReview);
+
+        getOneDataByKey(reviewSchemeDbRef.current, "4").then((value) =>
+          console.log(value),
+        );
+      }, 2000);
 
       // task all complete，last day ，and later
     };
@@ -234,13 +236,34 @@ const StudyDay = () => {
         style={{
           display: "flex",
           marginBottom: 20,
+          justifyContent: "space-between",
           fontSize: 18,
           color: "#334155",
         }}
       >
-        <span>学习计划：{mySchemeBriefRef.current?.book}</span>
-        <span>开始日期：{mySchemeBriefRef.current?.startDay}</span>
-        <span>预计天数：{mySchemeBriefRef.current?.groupNums} 天</span>
+        <span>
+          学习内容：
+          <br />
+          {mySchemeBriefRef.current?.book}
+        </span>
+        <span>
+          开始日期：
+          <br />
+          {mySchemeBriefRef.current?.startDay}
+        </span>
+
+        <span>
+          每天学习：
+          <br />
+          {mySchemeBriefRef.current?.wordsGroup}个
+        </span>
+        <span>
+          预计天数：
+          <br />
+          {mySchemeBriefRef.current?.groupNums &&
+            mySchemeBriefRef.current?.groupNums + 21}
+          天
+        </span>
       </Space>
 
       <Space

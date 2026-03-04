@@ -9,16 +9,26 @@ const { Text } = Typography;
 
 // 类型定义
 interface StudyItem {
+  db_key: string;
   id: string;
   title: string;
   learnDate: string; // 格式：YYYY-MM-DD
+  isFinish: boolean;
 }
 
+interface ReviewItem {
+  db_key: string;
+  id: string;
+  studyId: string;
+  title: string;
+  reviewDate: string; // 格式：YYYY-MM-DD
+  isFinish: boolean;
+}
 interface StudyTaskCardProps {
   isActive: boolean;
   selectedDay: string;
   learnTasks: StudyItem[];
-  reviewTasks: StudyItem[];
+  reviewTasks: ReviewItem[];
 }
 
 // 专注于渲染任务列表的子组件
@@ -30,8 +40,20 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
 }) => {
   const navigate = useNavigate();
   const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
-  const handleStartStudy = async (group: string) => {
+
+  // set cur group, cur_learn, cur_review
+  const handleStartStudy = async (
+    group: string,
+    studyType: "learn" | "review",
+    curKey: string,
+  ) => {
     await setOneDataByKey(configDbRef.current, "cur_group", parseInt(group));
+
+    await setOneDataByKey(configDbRef.current, "cur_study", {
+      studyType: studyType,
+      db_key: curKey,
+    });
+
     navigate("/study");
   };
 
@@ -67,13 +89,18 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
                 <Space>
                   <Badge color="blue" />
                   {item.title}
+                  {item.isFinish === true && (
+                    <span style={{ color: "#334155" }}>已完成</span>
+                  )}
                 </Space>
 
                 {isActive && (
                   <Button
                     type="link"
                     color="pink"
-                    onClick={() => handleStartStudy(item.id)}
+                    onClick={() =>
+                      handleStartStudy(item.id, "learn", item.db_key)
+                    }
                   >
                     开始学习
                   </Button>
@@ -107,12 +134,17 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
                 <Space>
                   <Badge color="orange" />
                   {item.title}
+                  {item.isFinish === true && (
+                    <span style={{ color: "#334155" }}>已完成</span>
+                  )}
                 </Space>
                 {isActive && (
                   <Button
                     type="link"
                     color="pink"
-                    onClick={() => handleStartStudy(item.id)}
+                    onClick={() =>
+                      handleStartStudy(item.studyId, "review", item.db_key)
+                    }
                   >
                     开始复习
                   </Button>

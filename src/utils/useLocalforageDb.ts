@@ -77,10 +77,9 @@ export async function getAllDataFromStore<T>(Db: LocalForage): Promise<T[]> {
   try {
     // 方法一：使用 iterate (推荐，效率高)
     // iterate 接收回调函数，遍历所有键值对
-    await Db.iterate((value: T) => {
-      // 将每一条数据构造成对象，推入数组
-
-      dataArray.push(value);
+    await Db.iterate((value: T, key: string) => {
+      // 将每一条数据构造成对象，推入数组，存入db_key,for update
+      dataArray.push({ ...value, db_key: key });
 
       // 注意：在 iterate 中不能使用 return 来中断（除非抛出异常），它是同步遍历
     });

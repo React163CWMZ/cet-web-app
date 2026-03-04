@@ -68,16 +68,20 @@ interface SchemeBrief {
 
 // study scheme 类型定义
 interface StudyItem {
+  db_key: string;
   id: string;
   title: string;
   learnDate: string; // 格式：YYYY-MM-DD
+  isFinish: boolean;
 }
 
 interface ReviewItem {
+  db_key: string;
   id: string;
   studyId: string;
   title: string;
   reviewDate: string; // 格式：YYYY-MM-DD
+  isFinish: boolean;
 }
 
 interface projConfig {
@@ -241,9 +245,11 @@ const BookSelect = () => {
     // create new scheme must clear userScheme db at first.
     // real 学习数据
     schemeArr = Array.from({ length: n }, (_, index) => ({
+      db_key: "",
       id: (index + 1).toString(), // index 从 0 开始，所以 +1
       title: `单词 Day ${index + 1}`,
       learnDate: dayjs().add(index, "day").format("YYYY-MM-DD"),
+      isFinish: false,
     }));
 
     await clearStore(userSchemeDbRef.current);
@@ -257,10 +263,12 @@ const BookSelect = () => {
 
       // 将每个复习日期与原对象的 id、title 组合成新对象
       return reviewDates.map((date, index) => ({
+        db_key: "",
         id: (index + 1).toString(),
         studyId: item.id,
         title: item.title,
         reviewDate: date, // 这里使用 reviewDate 作为新字段名
+        isFinish: false,
       }));
     });
     await clearStore(reviewSchemeDbRef.current);

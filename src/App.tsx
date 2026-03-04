@@ -15,6 +15,7 @@ import useLocalforageDb, {
   getOneData,
   getOneDataByKey,
   getAllDataFromStore,
+  setOneDataByKey,
 } from "./utils/useLocalforageDb.ts";
 import { isArrayNonEmpty } from "./utils/arrayFunc.ts";
 
@@ -50,6 +51,10 @@ interface SchemeBrief {
   wordsGroup: number;
   groupNums: number;
   startDay?: string;
+}
+interface currentStudy {
+  studyType: "learn" | "review";
+  db_key: string;
 }
 
 const App: React.FC = () => {
@@ -106,6 +111,9 @@ const App: React.FC = () => {
 
   const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
   const groupRef = useRef<number>(1);
+  const studyKeyRef = useRef<currentStudy>({ studyType: "learn", db_key: "" });
+  const userSchemeDbRef = useRef(useLocalforageDb("MyDb", "userScheme"));
+  const reviewSchemeDbRef = useRef(useLocalforageDb("MyDb", "reviewScheme"));
   const schemeBriefDbRef = useRef(useLocalforageDb("MyDb", "schemeBrief"));
   const bookRef = useRef<string>("");
   const soundValueRef = useRef<string>("on");
@@ -234,6 +242,45 @@ const App: React.FC = () => {
 
       if (err instanceof Error && err.message.includes("已到达最后一个")) {
         setIsModalOpen(true);
+        if (studyKeyRef.current["studyType"] === "learn") {
+          getOneDataByKey(
+            userSchemeDbRef.current,
+            studyKeyRef.current["db_key"],
+          )
+            .then((value) => {
+              if (typeof value == "object") {
+                console.log({ ...value, isFinish: true });
+                setOneDataByKey(
+                  userSchemeDbRef.current,
+                  studyKeyRef.current["db_key"],
+                  { ...value, isFinish: true },
+                );
+              }
+            })
+            .catch((err) => {
+              console.log((err as Error).message);
+            });
+        }
+
+        if (studyKeyRef.current["studyType"] === "review") {
+          getOneDataByKey(
+            reviewSchemeDbRef.current,
+            studyKeyRef.current["db_key"],
+          )
+            .then((value) => {
+              if (typeof value == "object") {
+                console.log({ ...value, isFinish: true });
+                setOneDataByKey(
+                  reviewSchemeDbRef.current,
+                  studyKeyRef.current["db_key"],
+                  { ...value, isFinish: true },
+                );
+              }
+            })
+            .catch((err) => {
+              console.log((err as Error).message);
+            });
+        }
       }
       setNextOneDisable(false);
     }
@@ -309,6 +356,12 @@ const App: React.FC = () => {
       // get group, then get group words
       getGroupWords();
     });
+
+    getOneDataByKey(configDbRef.current, "cur_study").then((currentStudy) => {
+      studyKeyRef.current = currentStudy as currentStudy;
+      console.log(studyKeyRef.current);
+    });
+
     getOneData(schemeBriefDbRef.current).then((scheme) => {
       if (scheme) {
         bookRef.current = (scheme as SchemeBrief)["book"] as string;
@@ -503,14 +556,14 @@ const App: React.FC = () => {
             ))}
             <Divider />
             {sentencesArr?.slice(0, 2).map((item, index) => (
-              <p key={index}>
+              <div key={index}>
                 <p style={{ fontSize: 22, fontWeight: 300, color: "#1e293b" }}>
                   {item.sentence}
                 </p>
                 <p style={{ fontSize: 20, fontWeight: 300, color: "#333" }}>
                   {item.translation}
                 </p>
-              </p>
+              </div>
             ))}
           </div>
         </Card>
