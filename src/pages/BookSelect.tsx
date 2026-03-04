@@ -499,7 +499,7 @@ const BookSelect = () => {
 
   return (
     <div className="word-select-container">
-      <Spin spinning={loading} fullscreen />;
+      <Spin spinning={loading} fullscreen />
       <Space orientation="vertical" size="large" style={{ width: "100%" }}>
         <div className="title-wrapper">
           <Title level={2}>选择单词本</Title>
@@ -560,7 +560,7 @@ const BookSelect = () => {
               学习组数：<strong>{totalDays}</strong> 组
             </p>
             <p>
-              学习天数：<strong>{totalDays + 21}</strong> 天
+              计划天数：<strong>{totalDays + 21}</strong> 天
             </p>
           </div>
         </Space>

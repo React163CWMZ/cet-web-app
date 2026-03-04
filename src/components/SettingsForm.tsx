@@ -6,8 +6,10 @@ import {
   Button,
   Card,
   ConfigProvider,
+  Modal,
+  Divider,
   // message,
-  // Space,
+  // Space,a
   // Switch,
   // theme,
 } from "antd";
@@ -25,9 +27,20 @@ const SettingsForm = () => {
 
   // 新增：用ref存储数据库实例，避免重复初始化
   const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const showModal = () => {
+    setIsModalOpen(true);
+  };
   // 处理重置学习计划
-  const handleResetPlan = () => {
+  const handleOk = () => {
+    setIsModalOpen(false);
     navigate("/book");
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
   };
 
   const onChange = (e: RadioChangeEvent) => {
@@ -55,6 +68,19 @@ const SettingsForm = () => {
         }
       }
     >
+      <Modal
+        title="重置学习计划"
+        okText="确定"
+        cancelText="取消"
+        closable={{ "aria-label": "Custom Close Button" }}
+        open={isModalOpen}
+        onOk={handleOk}
+        onCancel={handleCancel}
+      >
+        <Divider />
+        <p>重置学习计划，之前的学习计划会删除。</p>
+        <p>步骤：先选择单词表，将开启新的学习计划。</p>
+      </Modal>
       <Card
         title="用户设置"
         style={{
@@ -95,7 +121,7 @@ const SettingsForm = () => {
             />
           </Form.Item> */}
           <Form.Item label="重置" name="change">
-            <Button type="link" onClick={handleResetPlan}>
+            <Button type="link" onClick={showModal}>
               新学习计划
             </Button>
           </Form.Item>

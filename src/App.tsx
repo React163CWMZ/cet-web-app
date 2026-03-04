@@ -501,7 +501,7 @@ const App: React.FC = () => {
         ]}
         style={{
           width: "100%",
-          height: "98vh",
+          height: "96vh",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -543,7 +543,7 @@ const App: React.FC = () => {
           {/* 使用可选链 (Optional Chaining) */}
           {translationsArr?.map((item, index) => (
             <p
-              style={{ fontSize: 20, fontWeight: 300, color: "#333" }}
+              style={{ fontSize: 16, fontWeight: 300, color: "#333" }}
               key={index}
             >
               {item.translation}{" "}
