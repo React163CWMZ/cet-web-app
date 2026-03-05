@@ -10,10 +10,11 @@ import {
   Col,
   Button,
   Checkbox,
+  Divider,
   // message,
   Modal,
 } from "antd";
-
+import { CloseCircleOutlined } from "@ant-design/icons";
 import useLocalforageDb, {
   getOneData,
   getOneDataByKey,
@@ -130,6 +131,20 @@ function connectTranslations(translations: TranslationsItem[]): string {
 const WordList: React.FC<WordListProps> = () => {
   const navigate = useNavigate();
   const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
+
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+
+  const showCloseModal = () => {
+    setIsCloseModalOpen(true);
+  };
+  const closeHandleOk = () => {
+    setIsCloseModalOpen(false);
+    navigate("/study");
+  };
+
+  const closeHandleCancel = () => {
+    setIsCloseModalOpen(false);
+  };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -391,7 +406,7 @@ const WordList: React.FC<WordListProps> = () => {
     <Card
       title={
         <>
-          <div
+          <Space
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -399,6 +414,8 @@ const WordList: React.FC<WordListProps> = () => {
               width: "100%",
             }}
           >
+            <CloseCircleOutlined onClick={showCloseModal} />
+
             <span>本次单词列表</span>
             <Button type="dashed" onClick={showModal} size="small">
               完成
@@ -414,7 +431,23 @@ const WordList: React.FC<WordListProps> = () => {
             >
               <p>{infoText}</p>
             </Modal>
-          </div>
+            <Modal
+              title="确定放弃选择吗？"
+              okText="确定"
+              cancelText="取消"
+              closable={{ "aria-label": "Custom Close Button" }}
+              open={isCloseModalOpen}
+              onOk={closeHandleOk}
+              onCancel={closeHandleCancel}
+              styles={{
+                header: {},
+                body: {},
+              }}
+            >
+              <Divider />
+              <p>确定？</p>
+            </Modal>
+          </Space>
         </>
       }
       style={{ width: "100%", marginTop: 16, backgroundColor: "#fff" }}
@@ -478,7 +511,7 @@ const WordList: React.FC<WordListProps> = () => {
               className={`${mystyles.card} ${checkedIds.includes(item.word) ? "cardChecked" : ""}`}
               // hover 样式
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#fff0f5"; // hover 背景色
+                e.currentTarget.style.background = "#E0F2E1"; // hover 背景色
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "#f6f6f6"; // 恢复默认背景
