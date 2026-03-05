@@ -215,7 +215,7 @@ const WordList: React.FC<WordListProps> = () => {
     const judged_words = data.map((obj: WordItem) => obj.word);
     // the words need to learn = judged - known_words
     const learn_words = arrayDiff<string>(judged_words, known_words.current);
-    console.log(learn_words, judged_words, known_words.current);
+    // console.log(learn_words, judged_words, known_words.current);
 
     const Db = wordGroupDbRef.current;
 
@@ -264,6 +264,7 @@ const WordList: React.FC<WordListProps> = () => {
   const cet6Db = useLocalforageDb("MyDb", "cet6Store");
   const kaoyanDb = useLocalforageDb("MyDb", "kaoyanStore");
 
+  // choose db by bookname
   if (bookRef.current === "初中单词") {
     wordDbRef.current = juniorDb;
   } else if (bookRef.current === "高中单词") {
@@ -278,6 +279,11 @@ const WordList: React.FC<WordListProps> = () => {
 
   const wordGroupDbRef = useRef(useLocalforageDb("MyDb", "wordGroup"));
 
+  /**
+   * @description get word of wordGroup , by group
+   * @param Db
+   * @returns Promise<array> or exception error
+   */
   async function getGroupDataFromStore(Db: LocalForage) {
     let dataArray: groupWord[] = [];
 

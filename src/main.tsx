@@ -1,3 +1,24 @@
+// ==============================================
+// 发布版本清空本地数据，开发版本保留数据
+// ==============================================
+// 直接判断是否是 Electron 生产环境
+// const isProduction = !import.meta.env.DEV;
+
+// if (isProduction) {
+//   console.log("生产模式，清空数据");
+//   // 清空 localStorage
+//   localStorage.clear();
+
+//   // 清空 IndexedDB
+//   window.indexedDB.databases().then((dbs) => {
+//     dbs.forEach((db) => {
+//       if (db.name) {
+//         window.indexedDB.deleteDatabase(db.name);
+//       }
+//     });
+//   });
+// }
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router-dom";

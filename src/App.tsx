@@ -110,26 +110,33 @@ const App: React.FC = () => {
   };
 
   const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
+  // current group
   const groupRef = useRef<number>(1);
+  // current db_dkey of learn or review scheme
   const studyKeyRef = useRef<currentStudy>({ studyType: "learn", db_key: "" });
   const userSchemeDbRef = useRef(useLocalforageDb("MyDb", "userScheme"));
   const reviewSchemeDbRef = useRef(useLocalforageDb("MyDb", "reviewScheme"));
   const schemeBriefDbRef = useRef(useLocalforageDb("MyDb", "schemeBrief"));
+  // current word book of studying
   const bookRef = useRef<string>("");
+  // word sound voice on or off
   const soundValueRef = useRef<string>("on");
-
-  const [wordIndex, setWordIndex] = useState<number>(1); // 定义状态
+  // temp index of studing word
+  const [wordIndex, setWordIndex] = useState<number>(1);
+  // temp pre word index
+  const preWordRef = useRef<number>(1);
   const [word, setWord] = useState<string>("");
   const [phonetic, setPhonetic] = useState<string>("");
   const [sentencesArr, setSentencesArr] = useState<SentencesItem[]>([]);
   const [translationsArr, setTranslationsArr] = useState<TranslationsItem[]>(
     [],
   );
+
+  // control word shift time
   const [nextOneDisable, setNextOneDisable] = useState<boolean>(false);
   const [preOneDisable, setPreOneDisable] = useState<boolean>(false);
 
   const [wordData, setWordData] = useState<groupWord[]>([]);
-  const preWordRef = useRef<number>(1);
 
   const wordGroupDbRef = useRef(useLocalforageDb("MyDb", "wordGroup"));
   const wordDbRef = useRef(useLocalforageDb("MyDb", "juniorStore"));
@@ -230,7 +237,7 @@ const App: React.FC = () => {
 
         setTimeout(() => {
           setNextOneDisable(false);
-        }, 1000);
+        }, 1500);
         // setTranslations(connectTranslations(translations_arr));
       } else {
         // 如果没有数据，可以设置默认值或者保持为空
@@ -340,7 +347,7 @@ const App: React.FC = () => {
 
         setTimeout(() => {
           setPreOneDisable(false);
-        }, 1000);
+        }, 1500);
         // setTranslations(connectTranslations(translations_arr));
       } else {
         // 如果没有数据，可以设置默认值或者保持为空

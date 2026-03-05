@@ -71,7 +71,7 @@ const StudyDay = () => {
   }
 
   /**
-   * 找到比今天更晚的第一个 learnDate 对应的数组项
+   * @description 找到比今天更晚的第一个 learnDate 对应的数组项
    * @param items 单词列表
    * @returns 第一个未来的项，没有则返回 null
    */
@@ -91,7 +91,7 @@ const StudyDay = () => {
   }
 
   /**
-   * 找到比今天更晚的第一个 reviewDate 对应的数组项
+   * @description 找到比今天更晚的第一个 reviewDate 对应的数组项
    * @param items 单词列表
    * @returns 第一个未来的项，没有则返回 null
    */
