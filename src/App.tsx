@@ -494,6 +494,10 @@ const App: React.FC = () => {
             key="pre"
             onClick={preOne}
             disabled={preOneDisable}
+            style={{
+              WebkitTapHighlightColor: "rgba(0, 0, 0, 0)",
+              /* Android手机上，将高亮颜色的透明度设为 0，即完全透明 */
+            }}
           >
             上一个
           </Button>,
@@ -502,6 +506,10 @@ const App: React.FC = () => {
             key="next"
             disabled={nextOneDisable}
             onClick={nextOne}
+            style={{
+              WebkitTapHighlightColor: "rgba(0, 0, 0, 0)",
+              /* Android手机上，将高亮颜色的透明度设为 0，即完全透明 */
+            }}
           >
             下一个
           </Button>,
@@ -514,6 +522,7 @@ const App: React.FC = () => {
           overflow: "hidden",
           borderColor: "#4096FF",
           backgroundColor: "#E6F4FF",
+          borderRadius: 3,
         }}
         // ✅ 新版 antd 推荐：用 styles 代替 bodyStyle
         styles={{
@@ -522,6 +531,7 @@ const App: React.FC = () => {
             color: "#fafafa",
             fontSize: "16px",
             fontWeight: 500,
+            borderRadius: 2,
           },
           body: {
             flex: 1,
