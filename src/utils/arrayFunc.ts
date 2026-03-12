@@ -19,3 +19,26 @@ export function arrayShuffle<T>(array: T[]): T[] {
 export function isArrayNonEmpty<T>(arr: T | null | undefined): boolean {
   return Array.isArray(arr) && arr.length > 0;
 }
+
+// if value is Empty ,return true, or return false
+export function isEmpty(value: unknown): boolean {
+  // 处理 null 和 undefined
+  if (value == null) return true;
+
+  // 处理字符串和数组
+  if (typeof value === "string" || Array.isArray(value)) {
+    return value.length === 0;
+  }
+
+  // 处理对象
+  if (typeof value === "object") {
+    return Object.keys(value).length === 0;
+  }
+
+  // 处理boolean
+  if (typeof value === "boolean") {
+    return value === false;
+  }
+
+  return false;
+}

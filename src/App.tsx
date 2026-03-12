@@ -17,7 +17,8 @@ import useLocalforageDb, {
   getAllDataFromStore,
   setOneDataByKey,
 } from "./utils/useLocalforageDb.ts";
-import { isArrayNonEmpty } from "./utils/arrayFunc.ts";
+import { isArrayNonEmpty, isEmpty } from "./utils/arrayFunc.ts";
+import "./App.css";
 
 const { Title } = Typography;
 
@@ -136,7 +137,7 @@ const App: React.FC = () => {
   const [nextOneDisable, setNextOneDisable] = useState<boolean>(false);
   const [preOneDisable, setPreOneDisable] = useState<boolean>(false);
 
-  const [wordData, setWordData] = useState<groupWord[]>([]);
+  const wordDataRef = useRef<groupWord[]>([]);
 
   const wordGroupDbRef = useRef(useLocalforageDb("MyDb", "wordGroup"));
   const wordDbRef = useRef(useLocalforageDb("MyDb", "juniorStore"));
@@ -159,8 +160,6 @@ const App: React.FC = () => {
     wordDbRef.current = kaoyanDb;
   }
 
-  // 倒计时数字
-  const [count, setCount] = useState(1);
   // 是否结束倒计时
   const [isCountFinish, setIsCountFinish] = useState(false);
 
@@ -177,8 +176,8 @@ const App: React.FC = () => {
           ...item, // 展开原有的所有属性
           index: idx + 1, // 添加 index，从 1 开始
         }));
-        // console.log("444", data);
-        setWordData(data as groupWord[]);
+        // console.log("555", data);
+        wordDataRef.current = data as groupWord[];
       }
     });
   };
@@ -191,11 +190,13 @@ const App: React.FC = () => {
   const nextOnefromArray = async () => {
     try {
       setNextOneDisable(true);
-      // console.log("111==", wordData, wordIndex);
-      if (wordIndex > wordData.length) {
+      // console.log("111==", wordDataRef.current.length, wordIndex);
+      if (wordIndex > wordDataRef.current.length) {
         throw new Error("已到达最后一个");
       }
-      let showWord = wordData.filter((item) => item.index === wordIndex);
+      let showWord = wordDataRef.current.filter(
+        (item) => item.index === wordIndex,
+      );
 
       if (!isArrayNonEmpty(showWord)) {
         throw new Error("未找到单词");
@@ -203,10 +204,14 @@ const App: React.FC = () => {
       // current word index, make pre or next
       preWordRef.current = (showWord[0]["index"] as number) - 1;
       setWordIndex((showWord[0]["index"] as number) + 1);
-      const storedData: storedWord | null = await wordDbRef.current.getItem(
+      let storedData: storedWord | null = await wordDbRef.current.getItem(
         showWord[0]["word"],
       );
-
+      // unknown the reason why getItem return null, run it again
+      if (isEmpty(storedData)) {
+        storedData = await wordDbRef.current.getItem(showWord[0]["word"]);
+      }
+      // console.log("777==", showWord, storedData, wordDbRef.current);
       // 2. 判断数据是否存在
       if (storedData) {
         // 如果存在，更新到 state (localforage 会自动反序列化对象/数组)
@@ -232,12 +237,12 @@ const App: React.FC = () => {
             speechSynthesis.speak(
               new SpeechSynthesisUtterance(storedData["word"]),
             );
-          }, 500);
+          }, 300);
         }
 
         setTimeout(() => {
           setNextOneDisable(false);
-        }, 1500);
+        }, 1300);
         // setTranslations(connectTranslations(translations_arr));
       } else {
         // 如果没有数据，可以设置默认值或者保持为空
@@ -304,7 +309,7 @@ const App: React.FC = () => {
         throw new Error("已到达第一个");
         // showWord is empty
       }
-      let showWord = wordData.filter(
+      let showWord = wordDataRef.current.filter(
         (item) => item.index === preWordRef.current,
       );
       if (!isArrayNonEmpty(showWord)) {
@@ -342,12 +347,12 @@ const App: React.FC = () => {
             speechSynthesis.speak(
               new SpeechSynthesisUtterance(storedData["word"]),
             );
-          }, 500);
+          }, 300);
         }
 
         setTimeout(() => {
           setPreOneDisable(false);
-        }, 1500);
+        }, 1300);
         // setTranslations(connectTranslations(translations_arr));
       } else {
         // 如果没有数据，可以设置默认值或者保持为空
@@ -362,47 +367,63 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    getOneDataByKey(configDbRef.current, "cur_group").then((group) => {
-      groupRef.current = group as number;
-      // get group, then get group words
-      getGroupWords();
-    });
+    const pageInit = async () => {
+      await getOneDataByKey(configDbRef.current, "cur_group")
+        .then((group) => {
+          if (!isEmpty(group)) {
+            groupRef.current = group as number;
+            // get group, then get group words
+            getGroupWords().then(() => {
+              nextOne();
 
-    getOneDataByKey(configDbRef.current, "cur_study").then((currentStudy) => {
-      studyKeyRef.current = currentStudy as currentStudy;
-      console.log(studyKeyRef.current);
-    });
+              setTimeout(() => {
+                setIsCountFinish(true);
+              }, 500);
+            });
+          } else {
+            navigate(-1);
+          }
+        })
+        .catch(() => {
+          navigate(-1);
+        });
 
-    getOneData(schemeBriefDbRef.current).then((scheme) => {
-      if (scheme) {
-        bookRef.current = (scheme as SchemeBrief)["book"] as string;
-      }
-    });
+      getOneDataByKey(configDbRef.current, "cur_study")
+        .then((currentStudy) => {
+          if (!isEmpty(currentStudy)) {
+            studyKeyRef.current = currentStudy as currentStudy;
+          } else {
+            navigate(-1);
+          }
+        })
+        .catch(() => {
+          navigate(-1);
+        });
 
-    getOneDataByKey(configDbRef.current, "sound-config").then((value) => {
-      if (typeof value === "string") {
-        soundValueRef.current = value;
-      } else {
-        //empty , default sound is on
-        soundValueRef.current = "on";
-      }
-    });
+      await getOneData(schemeBriefDbRef.current)
+        .then((scheme) => {
+          if (!isEmpty(scheme)) {
+            bookRef.current = (scheme as SchemeBrief)["book"] as string;
+          } else {
+            navigate("/daytask");
+          }
+        })
+        .catch(() => {
+          navigate("daytask");
+        });
 
-    // 每秒减1
-    const timer = setInterval(() => {
-      setCount((prev) => prev - 1);
-    }, 1000);
+      getOneDataByKey(configDbRef.current, "sound-config").then((value) => {
+        if (typeof value === "string") {
+          soundValueRef.current = value;
+        } else {
+          //empty , default sound is on
+          soundValueRef.current = "on";
+        }
+      });
+    };
 
-    // 倒计时到0就停止，并进入单词页
-    if (count === 0) {
-      clearInterval(timer);
-      setIsCountFinish(true);
-      nextOne();
-    }
-
-    // 清理定时器
-    return () => clearInterval(timer);
-  }, [count]); // 空依赖数组，确保只在组件挂载时执行一次
+    pageInit();
+  }, []); // 空依赖数组，确保只在组件挂载时执行一次
 
   // —————— 倒计时页面 ——————
   if (!isCountFinish) {

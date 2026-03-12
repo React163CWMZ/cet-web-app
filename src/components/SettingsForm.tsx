@@ -54,7 +54,7 @@ const SettingsForm = () => {
         setSoundValue(value);
       } else {
         // empty default is sound on
-        setSoundValue("on");
+        setSoundValue("off");
       }
     });
   }, []);

@@ -22,3 +22,7 @@ html {
 .title {
   font-size: 1.5rem; /* 在 14px 基准下为 21px，在 18px 基准下为 27px */
 }
+
+a, button, [onclick] {
+    -webkit-tap-highlight-color: transparent !important;
+}

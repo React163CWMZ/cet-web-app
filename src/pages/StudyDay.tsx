@@ -6,7 +6,8 @@ import useLocalforageDb, {
   getAllDataFromStore,
 } from "../utils/useLocalforageDb";
 import { Space } from "antd";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { isEmpty } from "../utils/arrayFunc";
 
 // study scheme 类型定义
 interface StudyItem {
@@ -34,8 +35,7 @@ interface SchemeBrief {
 }
 
 const StudyDay = () => {
-  // const navigate = useNavigate();
-
+  const navigate = useNavigate();
   // 引入 useLocation 钩子接收参数
   const location = useLocation();
   //解构参数（加类型注解更规范）
@@ -59,16 +59,6 @@ const StudyDay = () => {
   // 新增：用ref存储数据库实例，避免重复初始化
   const userSchemeDbRef = useRef(useLocalforageDb("MyDb", "userScheme"));
   const reviewSchemeDbRef = useRef(useLocalforageDb("MyDb", "reviewScheme"));
-
-  try {
-    getOneData(SchemeBriefDbRef.current).then((data) => {
-      if (data) {
-        mySchemeBriefRef.current = data as SchemeBrief;
-      }
-    });
-  } catch (err) {
-    // pop windows , prompt try again
-  }
 
   /**
    * @description 找到比今天更晚的第一个 learnDate 对应的数组项
@@ -117,10 +107,20 @@ const StudyDay = () => {
       let reviewArr: ReviewItem[] = [];
 
       try {
+        getOneData(SchemeBriefDbRef.current).then((data) => {
+          if (!isEmpty(data)) {
+            mySchemeBriefRef.current = data as SchemeBrief;
+          } else {
+            // learn scheme is empty, go /book
+            navigate("/book");
+          }
+        });
+
         // get scheme from db
         schemeArr = await getAllDataFromStore<StudyItem>(
           userSchemeDbRef.current,
         );
+
         // get today learn
         setSelectedLearn(
           schemeArr.filter((item) => item.learnDate === selectedDay),
@@ -268,7 +268,7 @@ const StudyDay = () => {
         <span>
           预计天数：
           {mySchemeBriefRef.current?.groupNums &&
-            mySchemeBriefRef.current?.groupNums + 21}
+            mySchemeBriefRef.current?.groupNums + 15}
           天
         </span>
       </Space>

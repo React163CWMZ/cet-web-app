@@ -139,11 +139,8 @@ const BookSelect = () => {
 
   // 1. 单词本数据（你可以改成自己的真实数量）
   const BookList: BookItem[] = [
-    { key: "junior", title: "初中单词", desc: "Junior High", totalWords: 1991 },
-    { key: "senior", title: "高中单词", desc: "Senior High", totalWords: 3753 },
     { key: "cet4", title: "四级单词", desc: "CET-4", totalWords: 4544 },
     { key: "cet6", title: "六级单词", desc: "CET-6", totalWords: 3992 },
-    { key: "kaoyan", title: "考研单词", desc: "Kaoyan", totalWords: 5057 },
   ];
 
   // 2. 状态
@@ -219,6 +216,7 @@ const BookSelect = () => {
 
   // 5. 确认计划
   const handleConfirmPlan = async () => {
+    setLoading(true); // 计划生成开始，开启加载状态。
     setPlanModalVisible(false);
 
     let mySchemeBrief: SchemeBrief = {
@@ -285,7 +283,7 @@ const BookSelect = () => {
     });
     await clearStore(reviewSchemeDbRef.current);
     await saveListData<ReviewItem>(reviewSchemeDbRef.current, resultArr);
-
+    setLoading(false); // 计划生成完成，关闭加载状态。
     // message.success(
     //   `已选择：${selectedBook?.title}，每天 ${dailyCount} 个，共 ${totalDays + 21} 天完成！`,
     // );
@@ -362,62 +360,64 @@ const BookSelect = () => {
         setOneDataByKey(configDbRef.current, "junior-config", {
           hasInit: true,
         });
+        // set voice default is off
+        setOneDataByKey(configDbRef.current, "sound-config", "off");
 
         // 路径直接以 / 开头，指向 public 目录
         try {
           // save junior high data to db
-          axios
-            .get("junior_data.json")
-            .then((response) => {
-              // console.log("333", response);
-              // judge data is array and not empty, return true, else false
-              if (isArrayNonEmpty(response.data) === false) {
-                throw new Error("***_data.json is empty");
-              }
-              // throw new Error("模拟错误123123");
-              return importJsonData(response.data, juniorDbRef.current).then(
-                (res) => {
-                  // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
-                  if (res === false) {
-                    throw new Error("***_data导入失败666");
-                  }
-                },
-              );
-            })
-            .catch((error) => {
-              console.log("***_data出错:", error);
-              setOneDataByKey(configDbRef.current, "junior-config", {
-                hasInit: false,
-              });
-              setError("数据初始化失败，请刷新重试！");
-            });
+          // axios
+          //   .get("junior_data.json")
+          //   .then((response) => {
+          //     // console.log("333", response);
+          //     // judge data is array and not empty, return true, else false
+          //     if (isArrayNonEmpty(response.data) === false) {
+          //       throw new Error("***_data.json is empty");
+          //     }
+          //     // throw new Error("模拟错误123123");
+          //     return importJsonData(response.data, juniorDbRef.current).then(
+          //       (res) => {
+          //         // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
+          //         if (res === false) {
+          //           throw new Error("***_data导入失败666");
+          //         }
+          //       },
+          //     );
+          //   })
+          //   .catch((error) => {
+          //     console.log("***_data出错:", error);
+          //     setOneDataByKey(configDbRef.current, "junior-config", {
+          //       hasInit: false,
+          //     });
+          //     setError("数据初始化失败，请刷新重试！");
+          //   });
 
-          // save senior high data to db
-          axios
-            .get("senior_data.json")
-            .then((response) => {
-              // console.log("333", response);
-              // judge data is array and not empty, return true, else false
-              if (isArrayNonEmpty(response.data) === false) {
-                throw new Error("***_data.json is empty");
-              }
-              // throw new Error("模拟错误123123");
-              return importJsonData(response.data, seniorDbRef.current).then(
-                (res) => {
-                  // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
-                  if (res === false) {
-                    throw new Error("***_data导入失败666");
-                  }
-                },
-              );
-            })
-            .catch((error) => {
-              console.log("***_data出错:", error);
-              setOneDataByKey(configDbRef.current, "junior-config", {
-                hasInit: false,
-              });
-              setError("数据初始化失败，请刷新重试！");
-            });
+          // // save senior high data to db
+          // axios
+          //   .get("senior_data.json")
+          //   .then((response) => {
+          //     // console.log("333", response);
+          //     // judge data is array and not empty, return true, else false
+          //     if (isArrayNonEmpty(response.data) === false) {
+          //       throw new Error("***_data.json is empty");
+          //     }
+          //     // throw new Error("模拟错误123123");
+          //     return importJsonData(response.data, seniorDbRef.current).then(
+          //       (res) => {
+          //         // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
+          //         if (res === false) {
+          //           throw new Error("***_data导入失败666");
+          //         }
+          //       },
+          //     );
+          //   })
+          //   .catch((error) => {
+          //     console.log("***_data出错:", error);
+          //     setOneDataByKey(configDbRef.current, "junior-config", {
+          //       hasInit: false,
+          //     });
+          //     setError("数据初始化失败，请刷新重试！");
+          //   });
 
           // save CET4 data to db
           axios
@@ -431,6 +431,7 @@ const BookSelect = () => {
               // throw new Error("模拟错误123123");
               return importJsonData(response.data, cet4DbRef.current).then(
                 (res) => {
+                  setLoading(false); // 数据初始化完成，关闭加载状态。
                   // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
                   if (res === false) {
                     throw new Error("***_data导入失败666");
@@ -474,32 +475,32 @@ const BookSelect = () => {
             });
 
           // save kaoyan data to db
-          axios
-            .get("kaoyan_data.json")
-            .then((response) => {
-              // console.log("333kaoyan", response);
-              // judge data is array and not empty, return true, else false
-              if (isArrayNonEmpty(response.data) === false) {
-                throw new Error("***_data.json is empty");
-              }
-              // throw new Error("模拟错误123123");
-              return importJsonData(response.data, kaoyanDbRef.current).then(
-                (res) => {
-                  setLoading(false); // 数据初始化完成，关闭加载状态。这个数据量最大，等它最后加载完成再关闭loading。也可以放在每个数据的then里，但可能会提前关闭loading。
-                  // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
-                  if (res === false) {
-                    throw new Error("***_data导入失败666");
-                  }
-                },
-              );
-            })
-            .catch((error) => {
-              console.log("***_data出错:", error);
-              setOneDataByKey(configDbRef.current, "junior-config", {
-                hasInit: false,
-              });
-              setError("数据初始化失败，请刷新重试！");
-            });
+          // axios
+          //   .get("kaoyan_data.json")
+          //   .then((response) => {
+          //     // console.log("333kaoyan", response);
+          //     // judge data is array and not empty, return true, else false
+          //     if (isArrayNonEmpty(response.data) === false) {
+          //       throw new Error("***_data.json is empty");
+          //     }
+          //     // throw new Error("模拟错误123123");
+          //     return importJsonData(response.data, kaoyanDbRef.current).then(
+          //       (res) => {
+          //         setLoading(false); // 数据初始化完成，关闭加载状态。这个数据量最大，等它最后加载完成再关闭loading。也可以放在每个数据的then里，但可能会提前关闭loading。
+          //         // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
+          //         if (res === false) {
+          //           throw new Error("***_data导入失败666");
+          //         }
+          //       },
+          //     );
+          //   })
+          //   .catch((error) => {
+          //     console.log("***_data出错:", error);
+          //     setOneDataByKey(configDbRef.current, "junior-config", {
+          //       hasInit: false,
+          //     });
+          //     setError("数据初始化失败，请刷新重试！");
+          //   });
         } catch (err) {
           console.log("Error:", err);
         } finally {
@@ -604,7 +605,7 @@ const BookSelect = () => {
               学习组数：<strong>{totalDays}</strong> 组
             </p>
             <p>
-              计划天数：<strong>{totalDays + 21}</strong> 天
+              计划天数：<strong>{totalDays + 15}</strong> 天
             </p>
           </div>
         </Space>
