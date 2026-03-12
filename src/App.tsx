@@ -228,15 +228,21 @@ const App: React.FC = () => {
           setSentencesArr(storedData["sentences"]);
         }
 
-        // let utteranceWord = new SpeechSynthesisUtterance(storedData["word"]),
-        //   utteranceWord.lang = "en-US"
-        //   utteranceWord.volume = 1;
         if (soundValueRef.current == "on") {
           setTimeout(() => {
             //发音
-            speechSynthesis.speak(
-              new SpeechSynthesisUtterance(storedData["word"]),
-            );
+            // speechSynthesis.speak(
+            //   new SpeechSynthesisUtterance(storedData["word"]),
+            // );
+
+            // 创建 SpeechSynthesisUtterance 对象
+            const utterance = new SpeechSynthesisUtterance(storedData["word"]);
+            // 设置语速，范围从 0.1 到 10，默认值为 1
+            utterance.rate = 0.8;
+            // 设置语言，例如 "en - US" 代表美式英语，"zh - CN" 代表中文普通话（中国大陆）
+            utterance.lang = "en-GB";
+            // 调用 speak 方法进行语音播报
+            speechSynthesis.speak(utterance);
           }, 300);
         }
 
@@ -338,15 +344,21 @@ const App: React.FC = () => {
         if (Array.isArray(storedData["sentences"])) {
           setSentencesArr(storedData["sentences"]);
         }
-        // let utteranceWord = new SpeechSynthesisUtterance(storedData["word"]),
-        //   utteranceWord.lang = "en-US"
-        //   utteranceWord.volume = 1;
+
         if (soundValueRef.current == "on") {
           setTimeout(() => {
             //发音
-            speechSynthesis.speak(
-              new SpeechSynthesisUtterance(storedData["word"]),
-            );
+            // speechSynthesis.speak(
+            //   new SpeechSynthesisUtterance(storedData["word"]),
+            // );
+            // 创建 SpeechSynthesisUtterance 对象
+            const utterance = new SpeechSynthesisUtterance(storedData["word"]);
+            // 设置语速，范围从 0.1 到 10，默认值为 1
+            utterance.rate = 0.8;
+            // 设置语言，例如 "en - US" 代表美式英语，"zh - CN" 代表中文普通话（中国大陆）
+            utterance.lang = "en-GB";
+            // 调用 speak 方法进行语音播报
+            speechSynthesis.speak(utterance);
           }, 300);
         }
 
@@ -513,7 +525,7 @@ const App: React.FC = () => {
           <Button
             type="primary"
             key="pre"
-            onClick={preOne}
+            onTouchEnd={preOne}
             disabled={preOneDisable}
             size="large"
           >
@@ -523,7 +535,7 @@ const App: React.FC = () => {
             type="primary"
             key="next"
             disabled={nextOneDisable}
-            onClick={nextOne}
+            onTouchEnd={nextOne}
             size="large"
           >
             下一个
@@ -555,11 +567,11 @@ const App: React.FC = () => {
           },
           actions: {
             display: "flex",
-            minHeight: "100px",
-            height: "100px",
+            minHeight: "80px",
+            height: "80px",
             backgroundColor: "#E6F4FF",
             borderTop: "1px solid #e8e8e8",
-            alignItems: "top",
+            alignItems: "center",
           },
         }}
       >
