@@ -494,6 +494,7 @@ const App: React.FC = () => {
             key="pre"
             onClick={preOne}
             disabled={preOneDisable}
+            size="large"
           >
             上一个
           </Button>,
@@ -502,6 +503,7 @@ const App: React.FC = () => {
             key="next"
             disabled={nextOneDisable}
             onClick={nextOne}
+            size="large"
           >
             下一个
           </Button>,
@@ -531,8 +533,12 @@ const App: React.FC = () => {
             padding: "16",
           },
           actions: {
+            display: "flex",
+            minHeight: "100px",
+            height: "100px",
             backgroundColor: "#E6F4FF",
             borderTop: "1px solid #e8e8e8",
+            alignItems: "top",
           },
         }}
       >
@@ -540,7 +546,7 @@ const App: React.FC = () => {
           <p style={{ fontSize: 22, fontWeight: 500 }}>{word}</p>
           <p style={{ fontSize: 20, fontWeight: 300, color: "#64748b" }}>
             <Space>
-              [{phonetic}]
+              {phonetic && "[" + phonetic + "]"}
               <SoundOutlined
                 style={{ paddingTop: 10 }}
                 onClick={() => {
