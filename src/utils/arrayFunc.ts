@@ -42,3 +42,13 @@ export function isEmpty(value: unknown): boolean {
 
   return false;
 }
+
+// 封装一个延迟函数
+/**
+ * @desc 在async函数里面使用，await delay(500); // 同步延迟500ms，后面的代码只能等待。
+ * @param ms 毫秒
+ * @returns
+ */
+export function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

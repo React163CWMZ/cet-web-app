@@ -212,11 +212,15 @@ const App: React.FC = () => {
       let storedData: storedWord | null = await wordDbRef.current.getItem(
         showWord[0]["word"],
       );
-      // unknown the reason why getItem return null, run it again
+      // console.log("666==", showWord, storedData);
+      //  unknown the reason why getItem return null, run it again
       if (isEmpty(storedData)) {
+        // delay 500ms
+        await new Promise((resolve) => setTimeout(resolve, 500));
         storedData = await wordDbRef.current.getItem(showWord[0]["word"]);
+        // console.log("777==", showWord, storedData);
       }
-      // console.log("777==", showWord, storedData, wordDbRef.current);
+      // console.log("888==", showWord);
       // 2. 判断数据是否存在
       if (storedData) {
         // 如果存在，更新到 state (localforage 会自动反序列化对象/数组)
