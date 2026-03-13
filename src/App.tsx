@@ -189,6 +189,11 @@ const App: React.FC = () => {
   };
   const nextOnefromArray = async () => {
     try {
+      // if `true` if an utterance is currently in the process of being spoken
+      if (speechSynthesis && speechSynthesis.speaking === true) {
+        // cancel is speaking word.
+        speechSynthesis.cancel();
+      }
       setNextOneDisable(true);
       // console.log("111==", wordDataRef.current.length, wordIndex);
       if (wordIndex > wordDataRef.current.length) {
@@ -234,21 +239,24 @@ const App: React.FC = () => {
             // speechSynthesis.speak(
             //   new SpeechSynthesisUtterance(storedData["word"]),
             // );
-
-            // 创建 SpeechSynthesisUtterance 对象
-            const utterance = new SpeechSynthesisUtterance(storedData["word"]);
-            // 设置语速，范围从 0.1 到 10，默认值为 1
-            utterance.rate = 0.8;
-            // 设置语言，例如 "en - US" 代表美式英语，"zh - CN" 代表中文普通话（中国大陆）
-            utterance.lang = "en-GB";
-            // 调用 speak 方法进行语音播报
-            speechSynthesis.speak(utterance);
+            if ("speechSynthesis" in window) {
+              // 创建 SpeechSynthesisUtterance 对象
+              const utterance = new SpeechSynthesisUtterance(
+                storedData["word"],
+              );
+              // 设置语速，范围从 0.1 到 10，默认值为 1
+              utterance.rate = 0.8;
+              // 设置语言，例如 "en - US" 代表美式英语，"zh - CN" 代表中文普通话（中国大陆）
+              utterance.lang = "en-GB";
+              // 调用 speak 方法进行语音播报
+              speechSynthesis.speak(utterance);
+            }
           }, 300);
         }
 
         setTimeout(() => {
           setNextOneDisable(false);
-        }, 1300);
+        }, 500);
         // setTranslations(connectTranslations(translations_arr));
       } else {
         // 如果没有数据，可以设置默认值或者保持为空
@@ -309,6 +317,10 @@ const App: React.FC = () => {
   };
   const preOnefromArray = async () => {
     try {
+      if (speechSynthesis && speechSynthesis.speaking === true) {
+        // cancel is speaking word.
+        speechSynthesis.cancel();
+      }
       setPreOneDisable(true);
       if (preWordRef.current < 1) {
         // console.log(666);
@@ -351,28 +363,40 @@ const App: React.FC = () => {
             // speechSynthesis.speak(
             //   new SpeechSynthesisUtterance(storedData["word"]),
             // );
-            // 创建 SpeechSynthesisUtterance 对象
-            const utterance = new SpeechSynthesisUtterance(storedData["word"]);
-            // 设置语速，范围从 0.1 到 10，默认值为 1
-            utterance.rate = 0.8;
-            // 设置语言，例如 "en - US" 代表美式英语，"zh - CN" 代表中文普通话（中国大陆）
-            utterance.lang = "en-GB";
-            // 调用 speak 方法进行语音播报
-            speechSynthesis.speak(utterance);
+            if ("speechSynthesis" in window) {
+              // 创建 SpeechSynthesisUtterance 对象
+              const utterance = new SpeechSynthesisUtterance(
+                storedData["word"],
+              );
+              // 设置语速，范围从 0.1 到 10，默认值为 1
+              utterance.rate = 0.8;
+              // 设置语言，例如 "en - US" 代表美式英语，"zh - CN" 代表中文普通话（中国大陆）
+              utterance.lang = "en-GB";
+              // 调用 speak 方法进行语音播报
+              speechSynthesis.speak(utterance);
+            }
           }, 300);
         }
 
         setTimeout(() => {
           setPreOneDisable(false);
-        }, 1300);
-        // setTranslations(connectTranslations(translations_arr));
+        }, 300);
       } else {
         // 如果没有数据，可以设置默认值或者保持为空
         setWord("");
         console.log("not word found");
       }
     } catch (err) {
-      messageApi.info(err instanceof Error ? err.message : "操作失败");
+      if (err && (err as Error).message == "已到达第一个")
+        messageApi.info({
+          type: "error",
+          content: "已到达第一个",
+          duration: 3,
+          style: {
+            fontSize: "1.2rem",
+            marginTop: "5vh",
+          },
+        });
 
       setPreOneDisable(false);
     }
@@ -525,7 +549,11 @@ const App: React.FC = () => {
           <Button
             type="primary"
             key="pre"
-            onTouchEnd={preOne}
+            onTouchEnd={(e) => {
+              preOne();
+              e.preventDefault();
+            }}
+            onClick={preOne}
             disabled={preOneDisable}
             size="large"
           >
@@ -535,7 +563,11 @@ const App: React.FC = () => {
             type="primary"
             key="next"
             disabled={nextOneDisable}
-            onTouchEnd={nextOne}
+            onTouchEnd={(e) => {
+              nextOne();
+              e.preventDefault();
+            }}
+            onClick={nextOne}
             size="large"
           >
             下一个
@@ -577,17 +609,38 @@ const App: React.FC = () => {
       >
         <div style={{ textAlign: "center" }}>
           <p style={{ fontSize: 22, fontWeight: 500 }}>{word}</p>
-          <p style={{ fontSize: 20, fontWeight: 300, color: "#64748b" }}>
+          <div style={{ fontSize: 20, fontWeight: 300, color: "#64748b" }}>
             <Space>
               {phonetic && "[" + phonetic + "]"}
               <SoundOutlined
                 style={{ paddingTop: 10 }}
                 onClick={() => {
-                  speechSynthesis.speak(new SpeechSynthesisUtterance(word));
+                  if ("speechSynthesis" in window) {
+                    // 创建 SpeechSynthesisUtterance 对象
+                    const utterance = new SpeechSynthesisUtterance(word);
+                    // 设置语速，范围从 0.1 到 10，默认值为 1
+                    utterance.rate = 0.8;
+                    // 设置语言，例如 "en - US" 代表美式英语，"zh - CN" 代表中文普通话（中国大陆）
+                    utterance.lang = "en-GB";
+                    // 调用 speak 方法进行语音播报
+                    speechSynthesis.speak(utterance);
+                  } else {
+                    // if browser has not speechSynthesis, prompt user to download Edge
+                    messageApi.warning({
+                      type: "warning",
+                      content:
+                        "该程序不支持当前浏览器发音，如需单词发音，请下载Edge",
+                      duration: 5,
+                      style: {
+                        fontSize: "1.2rem",
+                        marginTop: "5vh",
+                      },
+                    });
+                  }
                 }}
               />
             </Space>
-          </p>
+          </div>
           {/* 使用可选链 (Optional Chaining) */}
           {translationsArr?.map((item, index) => (
             <p
