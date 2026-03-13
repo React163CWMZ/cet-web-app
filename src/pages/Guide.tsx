@@ -23,18 +23,17 @@ const Guide = () => {
         }
       });
       // check if has init data in db, if not, navigate to book select page to init db, else navigate to daytask page.
-      hasInit = await getOneDataByKey(
-        configDbRef.current,
-        "junior-config",
-      ).then((config) => {
-        // console.log("config", config);
-        if (config && typeof config === "object" && "hasInit" in config) {
-          // return (config as projConfig)["hasInit"] as boolean;
-          return config["hasInit"] as boolean;
-        } else {
-          return false;
-        }
-      });
+      hasInit = await getOneDataByKey(configDbRef.current, "prj-config").then(
+        (config) => {
+          // console.log("config", config);
+          if (config && typeof config === "object" && "hasInit" in config) {
+            // return (config as projConfig)["hasInit"] as boolean;
+            return config["hasInit"] as boolean;
+          } else {
+            return false;
+          }
+        },
+      );
 
       if (hasInit === false || hasScheme === false) {
         navigate("/book");

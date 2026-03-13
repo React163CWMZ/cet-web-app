@@ -68,6 +68,10 @@ const StudyTaskCard: React.FC<StudyTaskCardProps> = ({
           fontSize: "16px",
           fontWeight: 500,
           borderRadius: 2,
+          opacity: 0.8,
+        },
+        body: {
+          opacity: 0.8,
         },
       }}
     >

@@ -103,6 +103,7 @@ const SettingsForm = () => {
           initialValues={{
             sound: "on", // 默认开启声音
           }}
+          style={{ opacity: 0.8 }}
         >
           {/* 1. 声音设置 */}
 

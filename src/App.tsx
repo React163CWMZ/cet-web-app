@@ -10,7 +10,7 @@ import {
 } from "antd"; // 1. 导入 Card 组件
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { SoundOutlined, CloseCircleOutlined } from "@ant-design/icons";
+import { SoundOutlined, LeftOutlined } from "@ant-design/icons";
 import useLocalforageDb, {
   getOneData,
   getOneDataByKey,
@@ -538,7 +538,7 @@ const App: React.FC = () => {
         title={
           <>
             <Space>
-              <CloseCircleOutlined onClick={showCloseModal} />
+              <LeftOutlined onClick={showCloseModal} />
               {bookRef.current}
             </Space>
           </>

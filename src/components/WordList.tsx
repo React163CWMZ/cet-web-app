@@ -151,7 +151,7 @@ const WordList: React.FC<WordListProps> = () => {
   // 控制按钮禁用状态的变量
   const [isOkButtonDisabled, setIsOkButtonDisabled] = useState(true);
   // Modal提示信息文本
-  const [infoText, setInfoText] = useState("继续保存吗");
+  const [infoText, setInfoText] = useState("保存吗");
 
   const showModal = () => {
     setIsModalOpen(true);
@@ -172,7 +172,7 @@ const WordList: React.FC<WordListProps> = () => {
   const handleOk = () => {
     saveLearn();
     setIsModalOpen(false);
-    navigate("/study");
+    navigate("/daytask");
   };
 
   const handleCancel = () => {
@@ -445,7 +445,7 @@ const WordList: React.FC<WordListProps> = () => {
               }}
             >
               <Divider />
-              <p>确定？</p>
+              <p>确定</p>
             </Modal>
           </Space>
         </>

@@ -7,7 +7,14 @@ const Setting = () => {
   const location = useLocation();
 
   return (
-    <div style={{ maxWidth: "100%", margin: "0 auto", padding: 20 }}>
+    <div
+      style={{
+        maxWidth: "100%",
+        margin: "0 auto",
+        padding: 20,
+        backgroundColor: "#fafafa",
+      }}
+    >
       <Space
         orientation="horizontal"
         size="large"

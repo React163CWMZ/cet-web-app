@@ -95,6 +95,7 @@ const BookSelect = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [hasScheme, setHasScheme] = useState(false);
+  const [loadingContent, setLoadingContent] = useState("");
 
   // 新增：用ref存储数据库实例，避免重复初始化
   const configDbRef = useRef(useLocalforageDb("MyDb", "configStore"));
@@ -146,58 +147,71 @@ const BookSelect = () => {
   // 2. 状态
   const [selectedBook, setSelectedBook] = useState<BookItem | null>(null);
   const [planModalVisible, setPlanModalVisible] = useState(false);
-  const [dailyCount, setDailyCount] = useState<DailyCount>(30); //daily new words count
+  const [dailyCount, setDailyCount] = useState<DailyCount>(30); //daily new words nums
   const [allData, setAllData] = useState<groupWord[]>([]);
 
   // 初始化 navigate 方法
   const navigate = useNavigate();
 
   // 3. 选择单词本 → 弹出计划
-  const handleSelectBook = (item: BookItem) => {
+  const handleSelectBook = async (item: BookItem) => {
     if (item["key"] === "junior") {
       // console.log(item);
-      getAllDataFromStore(juniorDbRef.current).then((data) => {
+      // 单词进行分组, await group finish , execute show Modal
+      await getAllDataFromStore(juniorDbRef.current).then((data) => {
         if (data && isArrayNonEmpty(data)) {
           setSelectedBook({ ...item, totalWords: data.length });
           setAllData(data);
         } else {
-          bookEmptyDeal();
+          bookEmptyDeal(
+            "junior_data.json",
+            juniorDbRef.current,
+            "junior-config",
+          );
         }
       });
     } else if (item["key"] === "senior") {
-      getAllDataFromStore(seniorDbRef.current).then((data) => {
+      await getAllDataFromStore(seniorDbRef.current).then((data) => {
         if (data && isArrayNonEmpty(data)) {
           setSelectedBook({ ...item, totalWords: data.length });
           setAllData(data);
         } else {
-          bookEmptyDeal();
+          bookEmptyDeal(
+            "senior_data.json",
+            seniorDbRef.current,
+            "senior-config",
+          );
         }
       });
     } else if (item["key"] === "cet4") {
-      getAllDataFromStore(cet4DbRef.current).then((data) => {
+      await getAllDataFromStore(cet4DbRef.current).then((data) => {
         if (data && isArrayNonEmpty(data)) {
           setSelectedBook({ ...item, totalWords: data.length });
           setAllData(data);
         } else {
-          bookEmptyDeal();
+          bookEmptyDeal("cet4_data.json", cet4DbRef.current, "cet4-config");
         }
       });
     } else if (item["key"] === "cet6") {
-      getAllDataFromStore(cet6DbRef.current).then((data) => {
+      await getAllDataFromStore(cet6DbRef.current).then((data) => {
         if (data && isArrayNonEmpty(data)) {
           setSelectedBook({ ...item, totalWords: data.length });
           setAllData(data);
         } else {
-          bookEmptyDeal();
+          bookEmptyDeal("cet6_data.json", cet6DbRef.current, "cet6-config");
         }
       });
     } else if (item["key"] === "kaoyan") {
-      getAllDataFromStore(kaoyanDbRef.current).then((data) => {
+      await getAllDataFromStore(kaoyanDbRef.current).then((data) => {
         if (data && isArrayNonEmpty(data)) {
           setSelectedBook({ ...item, totalWords: data.length });
           setAllData(data);
         } else {
-          bookEmptyDeal();
+          bookEmptyDeal(
+            "kaoyan_data.json",
+            kaoyanDbRef.current,
+            "kaoyan-config",
+          );
         }
       });
     } else {
@@ -217,6 +231,7 @@ const BookSelect = () => {
   // 5. 确认计划
   const handleConfirmPlan = async () => {
     setLoading(true); // 计划生成开始，开启加载状态。
+    setLoadingContent("生成计划中。。。");
     setPlanModalVisible(false);
 
     let mySchemeBrief: SchemeBrief = {
@@ -249,7 +264,6 @@ const BookSelect = () => {
     await saveListData<groupWord>(wordGroupDbRef.current, result);
 
     // 每天学习数据的构造
-
     const n: number = totalDays; // 假设循环 5 次
     let schemeArr: StudyItem[] = [];
     // create new scheme must clear userScheme db at first.
@@ -324,13 +338,61 @@ const BookSelect = () => {
     navigate("/book");
   };
 
-  // if book is empty, set hasInit = false, go to / for reload
-  const bookEmptyDeal = async () => {
-    await setOneDataByKey(configDbRef.current, "junior-config", {
-      hasInit: false,
-    });
+  /**
+   * if book is empty, get book from json
+   * @param bookName example: cet6_data.json
+   * @param Db
+   * @param configName  example: cet6-config
+   */
+  const bookEmptyDeal = async (
+    bookName: string,
+    Db: LocalForage,
+    configName: string,
+  ) => {
+    console.log("111");
+    // await new Promise((resolve) => setTimeout(resolve, 500));
+    setPlanModalVisible(false);
+    setLoading(true);
+    setLoadingContent("获取单词中。。。");
+    await getJsonBook(bookName, Db, configName);
 
-    navigate("/");
+    setLoading(false);
+    console.log("222");
+    // navigate("/book");
+  };
+
+  /**
+   * @description get word book
+   * @param bookName  example: cet6_data.json
+   * @param Db database
+   * @param configName database config item  example: cet6-config
+   */
+  const getJsonBook = async (
+    bookName: string,
+    Db: LocalForage,
+    configName: string,
+  ) => {
+    await axios
+      .get(bookName)
+      .then((response) => {
+        // console.log("333", response);
+        // judge data is array and not empty, return true, else false
+        if (isArrayNonEmpty(response.data) === false) {
+          throw new Error("***_data.json is empty");
+        }
+
+        // throw new Error("模拟错误123123");
+        return importJsonData(response.data, Db).then((res) => {
+          // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
+          if (res === false) {
+            throw new Error("***_data导入失败666");
+          }
+        });
+      })
+      .catch((error) => {
+        console.log("***_data出错:", error);
+        setError(configName + "数据初始化失败，请刷新重试！");
+      });
   };
 
   useEffect(() => {
@@ -345,9 +407,9 @@ const BookSelect = () => {
       setHasScheme(hasScheme);
     });
     let hasInit: boolean = false;
-    getOneDataByKey(configDbRef.current, "junior-config").then((config) => {
+    getOneDataByKey(configDbRef.current, "prj-config").then((config) => {
+      // console.log("11111", config);
       if (config) {
-        // console.log("11111", config);
         hasInit = (config as projConfig)["hasInit"];
       }
       if (hasInit === true) {
@@ -356,8 +418,8 @@ const BookSelect = () => {
 
       // console.log("12222", hasInit);
       if (hasInit === false) {
-        //set hasInit to true , then catch error,set hasInit to false. avoid repeat import when data file exist but error in data.
-        setOneDataByKey(configDbRef.current, "junior-config", {
+        //set hasInit to true , then catch error,set hasInit to false.
+        setOneDataByKey(configDbRef.current, "prj-config", {
           hasInit: true,
         });
         // set voice default is off
@@ -386,12 +448,11 @@ const BookSelect = () => {
           //   })
           //   .catch((error) => {
           //     console.log("***_data出错:", error);
-          //     setOneDataByKey(configDbRef.current, "junior-config", {
+          //     setOneDataByKey(configDbRef.current, "prj-config", {
           //       hasInit: false,
           //     });
           //     setError("数据初始化失败，请刷新重试！");
           //   });
-
           // // save senior high data to db
           // axios
           //   .get("senior_data.json")
@@ -413,67 +474,39 @@ const BookSelect = () => {
           //   })
           //   .catch((error) => {
           //     console.log("***_data出错:", error);
-          //     setOneDataByKey(configDbRef.current, "junior-config", {
+          //     setOneDataByKey(configDbRef.current, "prj-config", {
           //       hasInit: false,
           //     });
           //     setError("数据初始化失败，请刷新重试！");
           //   });
-
           // save CET4 data to db
-          axios
-            .get("cet4_data.json")
-            .then((response) => {
-              // console.log("333", response);
-              // judge data is array and not empty, return true, else false
-              if (isArrayNonEmpty(response.data) === false) {
-                throw new Error("***_data.json is empty");
-              }
-              // throw new Error("模拟错误123123");
-              return importJsonData(response.data, cet4DbRef.current).then(
-                (res) => {
-                  setLoading(false); // 数据初始化完成，关闭加载状态。
-                  // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
-                  if (res === false) {
-                    throw new Error("***_data导入失败666");
-                  }
-                },
-              );
-            })
-            .catch((error) => {
-              console.log("***_data出错:", error);
-              setOneDataByKey(configDbRef.current, "junior-config", {
-                hasInit: false,
-              });
-              setError("数据初始化失败，请刷新重试！");
-            });
-
+          // axios
+          //   .get("cet4_data.json")
+          //   .then((response) => {
+          //     // console.log("333", response);
+          //     // judge data is array and not empty, return true, else false
+          //     if (isArrayNonEmpty(response.data) === false) {
+          //       throw new Error("***_data.json is empty");
+          //     }
+          //     // throw new Error("模拟错误123123");
+          //     return importJsonData(response.data, cet4DbRef.current).then(
+          //       (res) => {
+          //         setLoading(false); // 数据初始化完成，关闭加载状态。
+          //         // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
+          //         if (res === false) {
+          //           throw new Error("***_data导入失败666");
+          //         }
+          //       },
+          //     );
+          //   })
+          //   .catch((error) => {
+          //     console.log("***_data出错:", error);
+          //     setOneDataByKey(configDbRef.current, "prj-config", {
+          //       hasInit: false,
+          //     });
+          //     setError("数据初始化失败，请刷新重试！");
+          //   });
           // save CET6 data to db
-          axios
-            .get("cet6_data.json")
-            .then((response) => {
-              // console.log("333", response);
-              // judge data is array and not empty, return true, else false
-              if (isArrayNonEmpty(response.data) === false) {
-                throw new Error("***_data.json is empty");
-              }
-              // throw new Error("模拟错误123123");
-              return importJsonData(response.data, cet6DbRef.current).then(
-                (res) => {
-                  // save data to db success, res is true, else false. if false, set hasInit to false, avoid repeat import.
-                  if (res === false) {
-                    throw new Error("***_data导入失败666");
-                  }
-                },
-              );
-            })
-            .catch((error) => {
-              console.log("***_data出错:", error);
-              setOneDataByKey(configDbRef.current, "junior-config", {
-                hasInit: false,
-              });
-              setError("数据初始化失败，请刷新重试！");
-            });
-
           // save kaoyan data to db
           // axios
           //   .get("kaoyan_data.json")
@@ -496,7 +529,7 @@ const BookSelect = () => {
           //   })
           //   .catch((error) => {
           //     console.log("***_data出错:", error);
-          //     setOneDataByKey(configDbRef.current, "junior-config", {
+          //     setOneDataByKey(configDbRef.current, "prj-config", {
           //       hasInit: false,
           //     });
           //     setError("数据初始化失败，请刷新重试！");
@@ -527,8 +560,9 @@ const BookSelect = () => {
 
   return (
     <div className="word-select-container">
-      <Spin spinning={loading} fullscreen />
-
+      <Spin spinning={loading} fullscreen>
+        {loadingContent}
+      </Spin>
       {hasScheme === true && (
         <Space
           orientation="horizontal"
