@@ -345,15 +345,15 @@ const BookSelect = () => {
     Db: LocalForage,
     configName: string,
   ) => {
-    console.log("111");
+    // console.log("111");
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // await new Promise((resolve) => setTimeout(resolve, 1000));
 
     setLoadingContent("获取单词中。。。");
     await getJsonBook(bookName, Db, configName);
 
     setLoading(false);
-    console.log("222");
+    // console.log("222");
     // navigate("/book");
   };
 
