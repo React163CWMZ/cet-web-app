@@ -14,7 +14,6 @@ import {
 } from "antd";
 
 import { BookOutlined, LeftOutlined } from "@ant-design/icons";
-import "./BookSelect.css";
 
 import useLocalforageDb, {
   getOneDataByKey,
@@ -22,7 +21,7 @@ import useLocalforageDb, {
   getOneData,
 } from "../utils/useLocalforageDb";
 
-import { arrayShuffle, isArrayNonEmpty } from "../utils/arrayFunc";
+import { isArrayNonEmpty } from "../utils/arrayFunc";
 import {
   saveOneData,
   saveListData,
@@ -32,6 +31,8 @@ import {
 import { getReviewDates } from "../utils/studyCommon";
 
 import axios from "axios";
+
+import "./BookSelect.css";
 
 const { Title } = Typography;
 
@@ -49,6 +50,7 @@ interface BookItem {
 interface groupWord {
   group: number;
   word: string;
+  isKnown: boolean;
 }
 
 interface storedWord {
@@ -116,16 +118,18 @@ const BookSelect = () => {
     try {
       // 方法一：使用 iterate (推荐，效率高)
       // iterate 接收回调函数，遍历所有键值对
-      await Db.iterate((value: storedWord) => {
+      await Db.iterate((value: storedWord, index: string) => {
         // 将每一条数据构造成对象，推入数组
         // console.log(value);
         if (!value || !value["word"]) {
           //word is empty or undefined, skip this data and log error
           return;
         }
+
         dataArray.push({
-          group: 0,
+          group: Math.floor(parseInt(index) / dailyCount) + 1, //分组
           word: value["word"],
+          isKnown: false,
         });
 
         // 注意：在 iterate 中不能使用 return 来中断（除非抛出异常），它是同步遍历
@@ -219,7 +223,7 @@ const BookSelect = () => {
       return;
     }
 
-    setDailyCount(30);
+    setDailyCount(50);
     setPlanModalVisible(true);
   };
 
@@ -252,16 +256,8 @@ const BookSelect = () => {
     }
 
     // group words
-    const result: groupWord[] = arrayShuffle(allData).map((item, index) => {
-      return {
-        ...item,
-        isKnown: false, // 新增字段，默认值为 false
-        group: Math.floor(index / dailyCount) + 1, // 每dailyCount个一组
-      };
-    });
-
     await clearStore(wordGroupDbRef.current);
-    await saveListData<groupWord>(wordGroupDbRef.current, result);
+    await saveListData<groupWord>(wordGroupDbRef.current, allData);
 
     // 每天学习数据的构造
     const n: number = totalDays; // 假设循环 5 次
@@ -350,9 +346,9 @@ const BookSelect = () => {
     configName: string,
   ) => {
     console.log("111");
-    // await new Promise((resolve) => setTimeout(resolve, 500));
-    setPlanModalVisible(false);
     setLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     setLoadingContent("获取单词中。。。");
     await getJsonBook(bookName, Db, configName);
 
@@ -422,6 +418,7 @@ const BookSelect = () => {
         setOneDataByKey(configDbRef.current, "prj-config", {
           hasInit: true,
         });
+        setLoading(false);
         // set voice default is off
         setOneDataByKey(configDbRef.current, "sound-config", "off");
 

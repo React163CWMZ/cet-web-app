@@ -51,3 +51,8 @@
   font-size: 12px;
   color: #999;
 }
+
+/*Spin show at top z-index*/
+.ant-spin-fullscreen {
+  z-index: 9999 !important;
+}
